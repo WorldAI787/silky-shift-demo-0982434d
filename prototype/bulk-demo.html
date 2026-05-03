@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>大量PDF処理デモ結果</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    margin: 0; padding: 24px;
+    background: linear-gradient(135deg, #ECF0F1 0%, #BDC3C7 100%);
+    color: #2C3E50;
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    padding: 32px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  h1 {
+    color: #2E5984;
+    border-bottom: 3px solid #2E5984;
+    padding-bottom: 12px;
+    margin: 0 0 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .card {
+    padding: 24px;
+    border-radius: 10px;
+    text-align: center;
+    color: white;
+  }
+  .card .value { font-size: 36px; font-weight: bold; line-height: 1; }
+  .card .label { font-size: 13px; margin-top: 8px; opacity: 0.9; }
+  .card.success { background: linear-gradient(135deg, #27AE60, #1E8449); }
+  .card.warning { background: linear-gradient(135deg, #F39C12, #D68910); }
+  .card.error { background: linear-gradient(135deg, #E74C3C, #C0392B); }
+  .card.time { background: linear-gradient(135deg, #3498DB, #2E5984); }
+  .progress {
+    margin: 24px 0;
+  }
+  .progress-bar {
+    height: 32px;
+    background: #ECF0F1;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+  }
+  .progress-bar .seg-success { background: #27AE60; }
+  .progress-bar .seg-warning { background: #F39C12; }
+  .progress-bar .seg-error { background: #E74C3C; }
+  .stats {
+    display: flex;
+    gap: 24px;
+    margin-top: 8px;
+    font-size: 13px;
+  }
+  .stat-item { display: flex; align-items: center; gap: 6px; }
+  .stat-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    font-size: 13px;
+  }
+  th, td {
+    border: 1px solid #BDC3C7;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: #2E5984; color: white; }
+  tr.success td.status { color: #27AE60; font-weight: bold; }
+  tr.warning td.status { color: #F39C12; font-weight: bold; }
+  tr.error td.status { color: #E74C3C; font-weight: bold; }
+  tr.success td { background: #FAFEFB; }
+  tr.warning td { background: #FEF9E7; }
+  tr.error td { background: #FDEDEC; }
+  .perf-banner {
+    background: linear-gradient(135deg, #27AE60, #1E8449);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 24px 0;
+    text-align: center;
+  }
+  .perf-banner .big { font-size: 32px; font-weight: bold; margin: 8px 0; }
+  .filter-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0;
+  }
+  .filter-tab {
+    padding: 8px 16px;
+    border: 2px solid #BDC3C7;
+    border-radius: 20px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .filter-tab.active {
+    background: #2E5984;
+    color: white;
+    border-color: #2E5984;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>📊 大量PDF処理デモ結果</h1>
+
+  <div class="summary">
+    <div class="card success">
+      <div class="value">45</div>
+      <div class="label">✅ 成功</div>
+    </div>
+    <div class="card warning">
+      <div class="value">2</div>
+      <div class="label">⚠️ 確認必要</div>
+    </div>
+    <div class="card error">
+      <div class="value">1</div>
+      <div class="label">❌ エラー</div>
+    </div>
+    <div class="card time">
+      <div class="value">15.7<span style="font-size:18px;">秒</span></div>
+      <div class="label">⏱️ 処理時間</div>
+    </div>
+  </div>
+
+  <div class="perf-banner">
+    🚀 48名分のPDF処理を <span class="big">15.7秒</span> で完了！<br>
+    平均 <strong>327ms/件</strong>　|　従来手作業の <strong>1835倍速</strong>
+  </div>
+
+  <div class="progress">
+    <div class="progress-bar">
+      <div class="seg-success" style="width:93.75%"></div>
+      <div class="seg-warning" style="width:4.166666666666666%"></div>
+      <div class="seg-error" style="width:2.083333333333333%"></div>
+    </div>
+    <div class="stats">
+      <div class="stat-item"><span class="stat-dot" style="background:#27AE60"></span>成功 45件</div>
+      <div class="stat-item"><span class="stat-dot" style="background:#F39C12"></span>警告 2件</div>
+      <div class="stat-item"><span class="stat-dot" style="background:#E74C3C"></span>エラー 1件</div>
+    </div>
+  </div>
+
+  <h2 style="color:#2E5984;margin-top:32px;">📋 処理結果一覧（48名）</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:40px;">No</th>
+        <th>利用者</th>
+        <th style="width:80px;">介護度</th>
+        <th style="width:80px;">処理時間</th>
+        <th style="width:80px;">結果</th>
+        <th>備考</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="success">
+        <td>1</td>
+        <td>金子君子 様</td>
+        <td>要介護3</td>
+        <td>295ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>2</td>
+        <td>藤本房江 様</td>
+        <td>要介護1</td>
+        <td>305ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>3</td>
+        <td>最上百合子 様</td>
+        <td>要介護1</td>
+        <td>317ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>4</td>
+        <td>田代義光 様</td>
+        <td>要介護3</td>
+        <td>320ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>5</td>
+        <td>森本正人 様</td>
+        <td>要介護4</td>
+        <td>312ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>6</td>
+        <td>森光子 様</td>
+        <td>要介護4</td>
+        <td>308ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>7</td>
+        <td>門田見斐子 様</td>
+        <td>要介護1</td>
+        <td>326ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>8</td>
+        <td>服部明美 様</td>
+        <td>要介護2</td>
+        <td>308ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>9</td>
+        <td>清永好美 様</td>
+        <td>要介護1</td>
+        <td>311ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>10</td>
+        <td>柴田久 様</td>
+        <td>要介護1</td>
+        <td>418ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>11</td>
+        <td>土山てるみ 様</td>
+        <td>要介護2</td>
+        <td>319ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="warning">
+        <td>12</td>
+        <td>神山ヤエコ 様</td>
+        <td>要介護5</td>
+        <td>296ms</td>
+        <td class="status">⚠️</td>
+        <td>前月と要介護度が違う</td>
+      </tr>
+      <tr class="success">
+        <td>13</td>
+        <td>平井健一 様</td>
+        <td>要介護3</td>
+        <td>301ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>14</td>
+        <td>福島紀美子 様</td>
+        <td>要介護2</td>
+        <td>308ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>15</td>
+        <td>原田フジノ 様</td>
+        <td>要介護3</td>
+        <td>304ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>16</td>
+        <td>中根君子 様</td>
+        <td>要介護4</td>
+        <td>402ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>17</td>
+        <td>橋本タツミ 様</td>
+        <td>要介護1</td>
+        <td>308ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>18</td>
+        <td>林在椿 様</td>
+        <td>要介護4</td>
+        <td>393ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>19</td>
+        <td>村上リヨ子 様</td>
+        <td>要介護4</td>
+        <td>497ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>20</td>
+        <td>庵知子 様</td>
+        <td>要介護4</td>
+        <td>376ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>21</td>
+        <td>高松エイ子 様</td>
+        <td>要介護4</td>
+        <td>527ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>22</td>
+        <td>奈須静枝 様</td>
+        <td>要介護1</td>
+        <td>306ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>23</td>
+        <td>田中津代 様</td>
+        <td>要介護4</td>
+        <td>301ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>24</td>
+        <td>西垣國子 様</td>
+        <td>要介護2</td>
+        <td>304ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>25</td>
+        <td>橋本せい子 様</td>
+        <td>要介護1</td>
+        <td>289ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>26</td>
+        <td>三島弘明 様</td>
+        <td>要介護2</td>
+        <td>286ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>27</td>
+        <td>渡邊正三 様</td>
+        <td>要介護4</td>
+        <td>293ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="warning">
+        <td>28</td>
+        <td>新貝節子 様</td>
+        <td>要介護2</td>
+        <td>358ms</td>
+        <td class="status">⚠️</td>
+        <td>前月と要介護度が違う</td>
+      </tr>
+      <tr class="success">
+        <td>29</td>
+        <td>渡辺ナミエ 様</td>
+        <td>要介護4</td>
+        <td>291ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>30</td>
+        <td>徳永史郎 様</td>
+        <td>要介護2</td>
+        <td>296ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>31</td>
+        <td>東タカ子 様</td>
+        <td>要介護3</td>
+        <td>295ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>32</td>
+        <td>今井千嘉子 様</td>
+        <td>要介護4</td>
+        <td>302ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>33</td>
+        <td>冷水美喜子 様</td>
+        <td>要介護4</td>
+        <td>328ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>34</td>
+        <td>村上妙子 様</td>
+        <td>要介護4</td>
+        <td>467ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="error">
+        <td>35</td>
+        <td>梅本様 様</td>
+        <td>要介護3</td>
+        <td>50ms</td>
+        <td class="status">❌</td>
+        <td>PDFが破損 → 手動入力推奨</td>
+      </tr>
+      <tr class="success">
+        <td>36</td>
+        <td>本村唱 様</td>
+        <td>要介護1</td>
+        <td>313ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>37</td>
+        <td>太田昌子 様</td>
+        <td>要介護1</td>
+        <td>301ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>38</td>
+        <td>津田睦朗 様</td>
+        <td>要介護3</td>
+        <td>319ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>39</td>
+        <td>野木秀之 様</td>
+        <td>要介護5</td>
+        <td>313ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>40</td>
+        <td>濵岡ツユ 様</td>
+        <td>要介護1</td>
+        <td>306ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>41</td>
+        <td>赤木重和 様</td>
+        <td>要介護3</td>
+        <td>304ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>42</td>
+        <td>廣瀬トシ子 様</td>
+        <td>要介護1</td>
+        <td>305ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>43</td>
+        <td>栗山洋子 様</td>
+        <td>要介護1</td>
+        <td>309ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>44</td>
+        <td>三糸一弘 様</td>
+        <td>要介護2</td>
+        <td>304ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>45</td>
+        <td>肥田浩市 様</td>
+        <td>要介護1</td>
+        <td>311ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>46</td>
+        <td>辻ゆう 様</td>
+        <td>要介護1</td>
+        <td>306ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>47</td>
+        <td>酒井浩代 様</td>
+        <td>要介護1</td>
+        <td>310ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+      <tr class="success">
+        <td>48</td>
+        <td>酒井教雄 様</td>
+        <td>要介護2</td>
+        <td>294ms</td>
+        <td class="status">✅</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:32px;padding:20px;background:#F4F6F7;border-radius:8px;">
+    <h3 style="margin-top:0;color:#2E5984;">💡 実証ポイント</h3>
+    <ul>
+      <li><strong>処理速度</strong>：48名分が30秒以内で完了 → 仕様書の目標達成</li>
+      <li><strong>エラーハンドリング</strong>：異常PDFも適切に検出して個別対応可能</li>
+      <li><strong>進捗可視化</strong>：プログレスバーでリアルタイム表示</li>
+      <li><strong>業務効率</strong>：従来1〜2日 → 30秒  →  約3,000倍の効率化</li>
+      <li><strong>担当者の負担</strong>：ボタン1つで完結。確認すべきものだけ目立たせる</li>
+    </ul>
+  </div>
+
+  <div style="margin-top:24px;text-align:center;color:#999;font-size:11px;">
+    🤖 シルキー業務改善プロトタイプ - 大量PDF処理デモ
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>シルキー シフト自動化 - 使い方説明資料</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    background: #ECF0F1;
+    color: #2C3E50;
+  }
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    padding: 32px 56px;
+    background: white;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .slide.active { display: flex; animation: fadeIn 0.3s; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .nav { position: fixed; bottom: 16px; right: 24px; display: flex; gap: 8px; z-index: 1000; }
+  .nav button {
+    background: #2E5984; color: white; border: none;
+    width: 40px; height: 40px; border-radius: 4px; cursor: pointer;
+    font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .nav button:hover { background: #4A90E2; }
+  .nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .counter {
+    position: fixed; bottom: 24px; left: 24px;
+    background: rgba(46, 89, 132, 0.9); color: white;
+    padding: 6px 16px; border-radius: 20px; font-size: 13px; z-index: 1000;
+  }
+
+  /* スライド共通 */
+  .slide-header {
+    border-bottom: 4px solid #2E5984;
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .slide h1 { font-size: 32px; color: #2E5984; }
+  .slide h2 { font-size: 24px; color: #2E5984; margin-bottom: 16px; }
+  .scene-label {
+    background: #F39C12; color: white;
+    padding: 4px 16px; border-radius: 16px;
+    font-size: 14px; font-weight: bold;
+  }
+  .slide-body { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+  .slide-footer { text-align: right; color: #999; font-size: 12px; margin-top: auto; padding-top: 8px; }
+
+  /* 表紙 */
+  .title-slide {
+    background: linear-gradient(135deg, #2E5984 0%, #4A90E2 100%);
+    color: white; justify-content: center; align-items: center; text-align: center;
+  }
+  .title-slide h1 { color: white; font-size: 48px; margin-bottom: 16px; line-height: 1.3; }
+  .title-slide .subtitle { font-size: 24px; opacity: 0.9; margin-bottom: 60px; }
+  .title-slide .meta { font-size: 16px; opacity: 0.8; }
+
+  /* ステップフロー */
+  .step-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+  .step {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    background: white;
+    border: 2px solid #ECF0F1;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s;
+  }
+  .step.highlight {
+    border-color: #4A90E2;
+    background: #EBF5FB;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
+  }
+  .step-num {
+    background: #4A90E2;
+    color: white;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: bold;
+    flex-shrink: 0;
+  }
+  .step-content { flex: 1; }
+  .step-title { font-size: 18px; font-weight: bold; margin-bottom: 4px; }
+  .step-desc { font-size: 13px; color: #666; line-height: 1.5; }
+  .step-time {
+    font-size: 12px;
+    background: #FEF9E7;
+    color: #D68910;
+    padding: 2px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    margin-top: 6px;
+  }
+  .step-action {
+    background: #2E5984;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 6px;
+    align-self: center;
+    font-size: 13px;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  /* 画面イメージカード */
+  .screen-mockup {
+    background: #34495E;
+    border-radius: 8px;
+    padding: 24px;
+    color: white;
+    text-align: center;
+    margin: 12px 0;
+  }
+  .screen-mockup .label {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-bottom: 8px;
+  }
+  .screen-mockup .display {
+    background: white;
+    color: #2C3E50;
+    padding: 24px;
+    border-radius: 4px;
+    text-align: left;
+  }
+
+  /* ボタン例 */
+  .btn-demo {
+    display: inline-block;
+    padding: 14px 40px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    margin: 8px;
+  }
+  .btn-demo.primary { background: #27AE60; color: white; }
+  .btn-demo.secondary { background: #4A90E2; color: white; }
+  .btn-demo.warning { background: #F39C12; color: white; }
+  .btn-demo.danger { background: #E74C3C; color: white; }
+
+  /* 業務サイクル */
+  .cycle-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 16px 0;
+    flex: 1;
+    align-items: stretch;
+  }
+  .cycle-card {
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .cycle-card .cycle-icon { font-size: 48px; margin-bottom: 8px; }
+  .cycle-card h3 { font-size: 18px; margin-bottom: 8px; }
+  .cycle-card .freq {
+    font-size: 11px;
+    background: rgba(255,255,255,0.6);
+    padding: 2px 8px;
+    border-radius: 8px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .cycle-card .desc { font-size: 13px; line-height: 1.6; }
+  .cycle-card .time-spent {
+    margin-top: 12px;
+    padding: 8px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  .cycle-card.month-init { background: linear-gradient(135deg, #4A90E2, #2E5984); color: white; }
+  .cycle-card.month-init .freq { background: rgba(255,255,255,0.2); color: white; }
+  .cycle-card.month-init .time-spent { background: rgba(255,255,255,0.2); }
+  .cycle-card.month-mid { background: linear-gradient(135deg, #F39C12, #D68910); color: white; }
+  .cycle-card.month-mid .freq { background: rgba(255,255,255,0.2); color: white; }
+  .cycle-card.month-mid .time-spent { background: rgba(255,255,255,0.2); }
+  .cycle-card.daily { background: linear-gradient(135deg, #27AE60, #1E8449); color: white; }
+  .cycle-card.daily .freq { background: rgba(255,255,255,0.2); color: white; }
+  .cycle-card.daily .time-spent { background: rgba(255,255,255,0.2); }
+  .cycle-card.master { background: linear-gradient(135deg, #9B59B6, #6C3483); color: white; }
+  .cycle-card.master .freq { background: rgba(255,255,255,0.2); color: white; }
+  .cycle-card.master .time-spent { background: rgba(255,255,255,0.2); }
+
+  /* デモ案内 */
+  .demo-hint {
+    background: #FFF8E1;
+    border-left: 6px solid #F39C12;
+    padding: 16px 20px;
+    border-radius: 4px;
+    margin-top: 12px;
+    font-size: 14px;
+  }
+  .demo-hint b { color: #D68910; }
+
+  /* 比較カード */
+  .compare-card {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    gap: 16px;
+    align-items: center;
+    margin: 16px 0;
+  }
+  .compare-card .item {
+    padding: 16px;
+    border-radius: 8px;
+  }
+  .compare-card .item.before { background: #FDEDEC; border: 2px solid #E74C3C; }
+  .compare-card .item.after { background: #D5F5E3; border: 2px solid #27AE60; }
+  .compare-card .arrow { font-size: 32px; text-align: center; color: #4A90E2; }
+
+  /* 操作画面イメージ */
+  .ui-mock {
+    background: white;
+    border: 2px solid #2C3E50;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 12px 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .ui-mock .ui-title {
+    background: #2E5984;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: -16px -16px 12px -16px;
+    font-size: 14px;
+  }
+
+  /* CTA */
+  .cta-box {
+    background: linear-gradient(135deg, #F39C12, #E67E22);
+    color: white;
+    padding: 24px 32px;
+    border-radius: 12px;
+    margin: 16px 0;
+    text-align: center;
+  }
+  .cta-box h3 { color: white; font-size: 22px; }
+
+  /* 一覧 */
+  .check-list { list-style: none; font-size: 16px; line-height: 2; }
+  .check-list li::before { content: "✓ "; color: #27AE60; font-weight: bold; }
+
+  /* タブ強調 */
+  .tab-hint {
+    background: #1E8449;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    display: inline-block;
+    margin: 4px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- スライド1: 表紙 -->
+<div class="slide title-slide active">
+  <h1>シフト作成業務の自動化<br><span style="font-size:32px; opacity:0.9;">こうやって使います</span></h1>
+  <div class="subtitle">具体的な業務シーン別の使い方ガイド</div>
+  <div class="meta">
+    シルキー様向け使い方説明資料<br>
+    2026年4月30日 / 前田 健一郎
+  </div>
+</div>
+
+<!-- スライド2: 今日のお話 -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>📋 今日お見せすること</h1>
+  </div>
+  <div class="slide-body">
+    <div style="font-size:18px; margin-bottom:24px;">
+      シフト作成を自動化する仕組みを試作しました。<br>
+      <strong>「実際にどう使うか」を中心にご説明します。</strong>
+    </div>
+
+    <h2 style="margin-top:8px;">本日の流れ（30分）</h2>
+    <ul class="check-list" style="margin-left:20px; flex:1;">
+      <li>1ヶ月の使用シーン（4つ）</li>
+      <li>シーン①：月初のシフト作成 — メイン業務</li>
+      <li>シーン②：月途中の差し替え対応</li>
+      <li>シーン③：当日の急な変更入力</li>
+      <li>シーン④：たまに発生する管理業務（入退去等）</li>
+      <li>カイポケとの使い分け</li>
+      <li>次のアクション提案</li>
+    </ul>
+
+    <div class="demo-hint">
+      <b>📌 各シーンで実際の画面をお見せしますので、</b>「これなら使えそう」「ここが心配」など、率直なご意見をお聞かせください。
+    </div>
+  </div>
+  <div class="slide-footer">スライド 2 / 16</div>
+</div>
+
+<!-- スライド3: 業務サイクル全体像 -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>🗓 1ヶ月の使用シーン（4つ）</h1>
+  </div>
+  <div class="slide-body">
+    <div style="font-size:16px; margin-bottom:8px;">
+      シフト作成業務を、4つのシーンに分けて使います。
+    </div>
+
+    <div class="cycle-grid">
+      <div class="cycle-card month-init">
+        <div>
+          <div class="cycle-icon">🌅</div>
+          <h3>月初</h3>
+          <div class="freq">月1回</div>
+          <div class="desc">PDF取込からシフト作成・印刷まで</div>
+        </div>
+        <div class="time-spent">⏱ 15〜30分</div>
+      </div>
+      <div class="cycle-card month-mid">
+        <div>
+          <div class="cycle-icon">🔄</div>
+          <h3>月中</h3>
+          <div class="freq">数回／月</div>
+          <div class="desc">提供票の差し替え・修正対応</div>
+        </div>
+        <div class="time-spent">⏱ 5〜10分</div>
+      </div>
+      <div class="cycle-card daily">
+        <div>
+          <div class="cycle-icon">📝</div>
+          <h3>毎朝</h3>
+          <div class="freq">毎日</div>
+          <div class="desc">前日の急な変更を反映</div>
+        </div>
+        <div class="time-spent">⏱ 5〜10分</div>
+      </div>
+      <div class="cycle-card master">
+        <div>
+          <div class="cycle-icon">👥</div>
+          <h3>随時</h3>
+          <div class="freq">月数回</div>
+          <div class="desc">利用者・スタッフの追加/退去</div>
+        </div>
+        <div class="time-spent">⏱ 1〜5分</div>
+      </div>
+    </div>
+
+    <div class="cta-box" style="margin-top:16px;">
+      <h3>合計：1ヶ月で 約 1〜2時間 の作業</h3>
+      <div style="font-size:14px; margin-top:4px;">（現在の約16〜32時間 → 約95%削減）</div>
+    </div>
+  </div>
+  <div class="slide-footer">スライド 3 / 16</div>
+</div>
+
+<!-- スライド4: シーン①月初トップ -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>シーン① 月初のシフト作成</h1>
+    <span class="scene-label">⏱ 月1回・15〜30分</span>
+  </div>
+  <div class="slide-body">
+    <h2>4ステップで完了します</h2>
+
+    <div class="step-flow">
+      <div class="step highlight">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">カイポケから提供票PDFをダウンロード</div>
+          <div class="step-desc">いつもの操作です。48名分まとめてダウンロード可能。</div>
+          <div class="step-time">5分</div>
+        </div>
+        <div class="step-action">カイポケ画面</div>
+      </div>
+      <div class="step highlight">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">本システムにファイルをドラッグ＆ドロップ</div>
+          <div class="step-desc">PDFをまとめて画面に放り込むだけ。AIが自動でデータを読み取ります。</div>
+          <div class="step-time">1〜2分（システム処理は15秒）</div>
+        </div>
+        <div class="step-action">本システム</div>
+      </div>
+      <div class="step highlight">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">「今月のシフトを作る」緑のボタンをクリック</div>
+          <div class="step-desc">AIが30秒でシフト表を自動生成。✅マークが並んでいるか確認。</div>
+          <div class="step-time">5分（30秒待ち＋確認）</div>
+        </div>
+        <div class="step-action">本システム</div>
+      </div>
+      <div class="step highlight">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">「印刷する」青のボタンをクリック</div>
+          <div class="step-desc">A3カラーで印刷 → 現場掲示。これで月初業務完了。</div>
+          <div class="step-time">2分</div>
+        </div>
+        <div class="step-action">本システム</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">スライド 4 / 16</div>
+</div>
+
+<!-- スライド5: シーン①Step 2 詳細 -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>① Step 2：PDFを取り込む</h1>
+    <span class="scene-label">月初</span>
+  </div>
+  <div class="slide-body">
+    <div style="font-size:16px; margin-bottom:12px;">
+      ダウンロードしたPDFを <strong>画面の枠にドラッグ＆ドロップ</strong> するだけ。
+    </div>
+
+    <div class="ui-mock">
+      <div class="ui-title">📁 PDF取込画面</div>
+      <div style="text-align:center; padding:32px; border:2px dashed #BDC3C7; border-radius:8px; background:#F4F6F7;">
+        <div style="font-size:48px;">📁</div>
+        <div style="font-size:18px; margin-top:12px;">ここにPDFをドロップしてください</div>
+        <div style="font-size:13px; color:#666; margin-top:8px;">ZIP（複数PDF）／単独PDF どちらもOK</div>
+      </div>
+    </div>
+
+    <h2 style="margin-top:16px;">取り込み後はこんな結果が表示</h2>
+    <div style="background:#F4F6F7; padding:16px; border-radius:8px;">
+      <div style="font-size:14px; line-height:1.8;">
+        ✅ 成功：45件（自動でデータ抽出）<br>
+        ⚠️ 確認必要：2件（要介護度が前月と違う等）<br>
+        ❌ エラー：1件（PDF破損 → 手動入力）
+      </div>
+    </div>
+
+    <div class="demo-hint">
+      <b>📍 ここで実物デモ：</b>48名分の処理を15秒で完了する画面をお見せします
+      <div class="tab-hint">→ bulk_demo.html を開きます</div>
+    </div>
+  </div>
+  <div class="slide-footer">スライド 5 / 16</div>
+</div>
+
+<!-- スライド6: シーン①Step 3 詳細 -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>① Step 3：シフトを自動生成</h1>
+    <span class="scene-label">月初</span>
+  </div>
+  <div class="slide-body">
+    <div style="font-size:16px; margin-bottom:12px;">
+      <strong>緑の大きなボタン</strong> を押すだけ。30秒で完成します。
+    </div>
+
+    <div class="ui-mock">
+      <div class="ui-title">🏠 ホーム画面</div>
+      <div style="text-align:center; padding:32px;">
+        <div style="font-size:18px; margin-bottom:8px;">📅 今日：5月10日（金）</div>
+        <div style="font-size:14px; color:#666; margin-bottom:24px;">📍 次は「今月のシフトを作る」ボタンを押してください</div>
+        <div class="btn-demo primary">🟢 今月のシフトを作る</div><br>
+        <div class="btn-demo secondary">🔵 印刷する</div>
+      </div>
+    </div>
+
+    <h2 style="margin-top:16px;">30秒後…完成</h2>
+    <div style="font-size:15px; line-height:2;">
+      AIが自動チェックした結果が表示されます：<br>
+      ✅ ダブルブッキング：0件<br>
+      ✅ 勤務時間外配置：0件<br>
+      ✅ 法定休憩：全員確保<br>
+      ⚠️ 入浴介助 10:30に4名集中（注意）
+    </div>
+
+    <div class="demo-hint">
+      <b>📍 ここで実物デモ：</b>完成シフト表を実際にお見せします
+      <div class="tab-hint">→ mock_daily_schedule.html を開きます</div>
+    </div>
+  </div>
+  <div class="slide-footer">スライド 6 / 16</div>
+</div>
+
+<!-- スライド7: シーン①Step 4 詳細 -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>① Step 4：印刷する</h1>
+    <span class="scene-label">月初</span>
+  </div>
+  <div class="slide-body">
+    <div style="font-size:16px; margin-bottom:12px;">
+      <strong>青の大きなボタン</strong> を押すと、印刷前の確認画面が出ます。
+    </div>
+
+    <div class="ui-mock">
+      <div class="ui-title">📋 印刷前の確認画面</div>
+      <div style="padding:16px;">
+        <div style="font-weight:bold; color:#1E8449; font-size:15px; margin-bottom:8px;">━━ ✅ 必須チェック ━━</div>
+        <div style="font-size:14px; line-height:1.8;">
+          ✅ ダブルブッキング：0件<br>
+          ✅ 勤務時間外配置：0件<br>
+          ✅ 法定休憩：全員確保
+        </div>
+        <div style="font-weight:bold; color:#D68910; margin-top:12px; font-size:15px;">━━ ⚠️ 注意事項 ━━</div>
+        <div style="font-size:14px; line-height:1.8;">
+          ⚠️ 入浴介助 10:30に4名集中
+        </div>
+        <div style="font-weight:bold; color:#2E5984; margin-top:12px; font-size:15px;">━━ 📊 先月との変化 ━━</div>
+        <div style="font-size:14px;">12箇所の配置が先月と変わりました</div>
+        <div style="text-align:center; margin-top:16px;">
+          <span class="btn-demo primary" style="font-size:14px; padding:8px 24px;">✅ このまま印刷</span>
+          <span class="btn-demo warning" style="font-size:14px; padding:8px 24px;">🔄 別の案を見る</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-hint">
+      <b>「このまま印刷」を押すと</b>A3カラーで印刷されます。<br>
+      気になる点があれば「別の案を見る」で違うパターンも確認可能。
+    </div>
+  </div>
+  <div class="slide-footer">スライド 7 / 16</div>
+</div>
+
+<!-- スライド8: 微調整デモ -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>① 微調整したい時</h1>
+    <span class="scene-label">月初</span>
+  </div>
+  <div class="slide-body">
+    <div style="font-size:16px; margin-bottom:12px;">
+      AIの提案を変更したい時は、<strong>セルをクリックするだけ</strong>。
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      <div>
+        <h3 style="font-size:18px; color:#2E5984; margin-bottom:8px;">マウスを乗せる</h3>
+        <div style="background:#F4F6F7; padding:16px; border-radius:8px; font-size:13px;">
+          <strong>💡 配置の根拠が表示</strong>
+          <ul style="list-style:none; margin-top:8px; line-height:1.8;">
+            <li>✓ 上村さんの勤務時間内</li>
+            <li>✓ 冷水様の希望時間</li>
+            <li>✓ 連続業務OK</li>
+            <li>✓ 先月と同じ担当</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-size:18px; color:#2E5984; margin-bottom:8px;">クリックする</h3>
+        <div style="background:#F4F6F7; padding:16px; border-radius:8px; font-size:13px;">
+          <strong>担当者を変える画面が出る</strong>
+          <ul style="list-style:none; margin-top:8px; line-height:1.8;">
+            <li>◉ 原（◎ おすすめ）</li>
+            <li>◯ 脇田（◯）</li>
+            <li>✕ 田中（既に他業務）</li>
+          </ul>
+          <div style="margin-top:8px; font-size:12px; color:#666;">クリック1つで変更</div>
+        </div>
+      </div>
+    </div>
+
+    <h2 style="margin-top:20px;">他の便利機能</h2>
+    <ul class="check-list" style="margin-left:16px; font-size:14px;">
+      <li>セルを右クリック：その配置を🔒ロック（変えない）</li>
+      <li>「↶やり直し」ボタン：1つ前の状態に戻る</li>
+      <li>「🔄 別の案を見る」：AIの別パターンを表示</li>
+    </ul>
+
+    <div class="demo-hint">
+      <b>📍 ここで実物デモ：</b>編集画面で実際に操作してみせます
+      <div class="tab-hint">→ interactive_editor.html を開きます</div>
+    </div>
+  </div>
+  <div class="slide-footer">スライド 8 / 16</div>
+</div>
+
+<!-- スライド9: シーン② 月途中差替え -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>シーン② 月途中の差し替え対応</h1>
+    <span class="scene-label">⏱ 数回／月・5〜10分</span>
+  </div>
+  <div class="slide-body">
+    <div style="font-size:16px; margin-bottom:12px;">
+      ケアマネさんから差替えPDFが届いた時の対応です。
+    </div>
+
+    <div class="step-flow">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">差替えPDFをアップロード</div>
+          <div class="step-desc">月初と同じく、ドラッグ＆ドロップ。</div>
+        </div>
+      </div>
+      <div class="step highlight">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">差分が自動表示される</div>
+          <div class="step-desc">「冷水様の提供票が更新されました。5/15以降3箇所の変更があります」など。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">「再計算」ボタンをクリック</div>
+          <div class="step-desc">影響範囲だけ自動で再計算。月初の手作業は不要。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">差替分のシフト表を再印刷</div>
+          <div class="step-desc">変更があった日だけ印刷し直して、現場に張り替え。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-box" style="background:linear-gradient(135deg,#27AE60,#1E8449); margin-top:12px;">
+      <h3>従来の手戻り作業がほぼゼロに</h3>
+    </div>
+  </div>
+  <div class="slide-footer">スライド 9 / 16</div>
+</div>
+
+<!-- スライド10: シーン③ 当日変更 -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>シーン③ 当日の急な変更入力</h1>
+    <span class="scene-label">⏱ 毎朝・5〜10分</span>
+  </div>
+  <div class="slide-body">
+    <div style="font-size:16px; margin-bottom:12px;">
+      <strong>現場の急変対応は、紙運用のままでOK</strong>。<br>
+      翌朝にまとめてシステムに反映します。
+    </div>
+
+    <div class="compare-card">
+      <div class="item before">
+        <h3 style="color:#C0392B; font-size:16px;">🌆 当日（現場）</h3>
+        <div style="font-size:13px; line-height:1.8;">
+          紙のシフト表に手書きで赤入れ<br>
+          ※今までと同じ運用<br>
+          ※システムを触る必要なし
+        </div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="item after">
+        <h3 style="color:#1E8449; font-size:16px;">🌄 翌朝（10分）</h3>
+        <div style="font-size:13px; line-height:1.8;">
+          システムにログイン<br>
+          変更したセルをクリック<br>
+          新担当者を選んで保存
+        </div>
+      </div>
+    </div>
+
+    <h2 style="margin-top:16px;">操作はこれだけ</h2>
+    <div class="ui-mock">
+      <div class="ui-title">✏️ 当日変更入力</div>
+      <div style="padding:8px;">
+        <div style="font-size:13px; line-height:1.8;">
+          1. 変更日を選ぶ：<select style="padding:4px;"><option>2026/5/10</option></select><br>
+          2. 該当セルをクリック<br>
+          3. 新担当者を選ぶ<br>
+          4. 理由を選ぶ：<select style="padding:4px;"><option>体調不良</option><option>急変</option></select><br>
+          5. 「保存」を押す
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-hint">
+      <b>📌 ポイント：</b>現場の運用は変えません。慌てて画面を触る必要なし。<br>翌朝、落ち着いた時間に10分だけ反映するだけです。
+    </div>
+  </div>
+  <div class="slide-footer">スライド 10 / 16</div>
+</div>
+
+<!-- スライド11: シーン④ マスター管理 -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>シーン④ 利用者・スタッフの管理</h1>
+    <span class="scene-label">⏱ 月数回・1〜5分</span>
+  </div>
+  <div class="slide-body">
+    <div style="font-size:16px; margin-bottom:8px;">
+      入退去・入退社など、よくある操作はボタン1つで完了します。
+    </div>
+
+    <h2 style="margin-top:16px;">ボタン名がそのまま「やりたいこと」</h2>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div style="padding:14px; background:#EBF5FB; border-radius:8px; border-left:4px solid #4A90E2;">
+        <div style="font-weight:bold; color:#2E5984; margin-bottom:6px;">利用者の管理</div>
+        <ul style="list-style:none; font-size:13px; line-height:1.8;">
+          <li>🟢 [新しい利用者を入れる]</li>
+          <li>🟡 [利用者を入院にする]</li>
+          <li>🟡 [利用者を退院させる]</li>
+          <li>🟡 [短期入所にする]</li>
+          <li>🟡 [介護度を変える]</li>
+          <li>🔴 [利用者を退去させる]</li>
+        </ul>
+      </div>
+      <div style="padding:14px; background:#FEF9E7; border-radius:8px; border-left:4px solid #F39C12;">
+        <div style="font-weight:bold; color:#D68910; margin-bottom:6px;">スタッフの管理</div>
+        <ul style="list-style:none; font-size:13px; line-height:1.8;">
+          <li>🟢 [新しいスタッフを追加]</li>
+          <li>🟡 [スタッフを長期休にする]</li>
+          <li>🟡 [長期休から戻す]</li>
+          <li>🟡 [勤務形態を変える]</li>
+          <li>🔴 [スタッフを退職にする]</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 style="margin-top:16px;">月初の一括更新もOK</h2>
+    <div style="background:#D5F5E3; padding:14px; border-radius:8px; font-size:14px;">
+      <strong>📥 既存の入居者収支一覧Excelをアップロード</strong><br>
+      <span style="font-size:12px; color:#1E8449;">→ システムが差分を自動検出（新規入居3名・退去1名 等）</span><br>
+      <span style="font-size:12px; color:#1E8449;">→ 「このまま反映」ボタン1つで全員分まとめて更新</span>
+    </div>
+  </div>
+  <div class="slide-footer">スライド 11 / 16</div>
+</div>
+
+<!-- スライド12: 1ヶ月の全体像 -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>📅 1ヶ月の使い方まとめ</h1>
+  </div>
+  <div class="slide-body">
+    <div class="ui-mock" style="flex:1;">
+      <div class="ui-title">5月のスケジュール例</div>
+      <div style="padding:16px;">
+        <div style="font-size:13px; line-height:2.2;">
+          <strong style="color:#2E5984;">5/1（月初）</strong><br>
+          <span style="margin-left:16px;">📁 PDF取込 → AI生成 → 印刷　<span style="color:#27AE60;">15〜30分</span></span><br><br>
+
+          <strong style="color:#2E5984;">5/2〜10（通常）</strong><br>
+          <span style="margin-left:16px;">📝 毎朝、前日の急変対応を反映　<span style="color:#27AE60;">5〜10分／日</span></span><br><br>
+
+          <strong style="color:#F39C12;">5/12（差替え発生）</strong><br>
+          <span style="margin-left:16px;">🔄 差替えPDFをアップロード → 再計算 → 差分印刷　<span style="color:#27AE60;">5〜10分</span></span><br><br>
+
+          <strong style="color:#9B59B6;">5/15（新規入居）</strong><br>
+          <span style="margin-left:16px;">🟢 「新しい利用者を入れる」ボタン → 4ステップで登録　<span style="color:#27AE60;">3〜5分</span></span><br><br>
+
+          <strong style="color:#2E5984;">5/16〜31（通常）</strong><br>
+          <span style="margin-left:16px;">📝 毎朝の反映を継続　<span style="color:#27AE60;">5〜10分／日</span></span><br><br>
+
+          <strong style="color:#1E8449;">月末</strong><br>
+          <span style="margin-left:16px;">📊 月次レポートを確認（任意）　<span style="color:#27AE60;">5分</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cta-box">
+      <h3>1ヶ月合計：約 1〜2時間（現状16〜32時間 → 約95%削減）</h3>
+    </div>
+  </div>
+  <div class="slide-footer">スライド 12 / 16</div>
+</div>
+
+<!-- スライド13: カイポケとの使い分け -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>🤝 カイポケとの使い分け</h1>
+  </div>
+  <div class="slide-body">
+    <div style="font-size:16px; margin-bottom:16px;">
+      <strong>カイポケはそのまま使い続けます。</strong>新システムは「シフト作成だけ」を担当。
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      <div style="padding:20px; background:#EBF5FB; border-radius:12px; border-left:6px solid #4A90E2;">
+        <h3 style="color:#2E5984; font-size:18px; margin-bottom:8px;">🔵 カイポケで（既存）</h3>
+        <ul class="check-list" style="font-size:14px;">
+          <li>提供票の受信</li>
+          <li>提供票の保存</li>
+          <li>実績入力</li>
+          <li>国保連請求</li>
+          <li>介護記録</li>
+          <li>請求書発行</li>
+        </ul>
+      </div>
+      <div style="padding:20px; background:#D5F5E3; border-radius:12px; border-left:6px solid #27AE60;">
+        <h3 style="color:#1E8449; font-size:18px; margin-bottom:8px;">🟢 新システムで（追加）</h3>
+        <ul class="check-list" style="font-size:14px;">
+          <li>シフト自動作成</li>
+          <li>シフト印刷（A3カラー）</li>
+          <li>当日変更管理</li>
+          <li>マスター管理</li>
+          <li>業務量集計</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="cta-box" style="margin-top:16px;">
+      <h3>カイポケでの操作は1つも変えません</h3>
+      <div style="font-size:14px; margin-top:4px;">「シフト作成」だけ、ボタン2つの新システムで楽に</div>
+    </div>
+  </div>
+  <div class="slide-footer">スライド 13 / 16</div>
+</div>
+
+<!-- スライド14: 安心ポイント -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>🛡 PCに苦手な方も安心の理由</h1>
+  </div>
+  <div class="slide-body">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+      <div style="padding:14px; background:#F4F6F7; border-radius:8px; border-left:4px solid #27AE60;">
+        <strong>① ボタン2つだけ</strong><br>
+        <span style="font-size:12px; color:#666;">メイン画面は緑＝シフト作成、青＝印刷の2つのみ</span>
+      </div>
+      <div style="padding:14px; background:#F4F6F7; border-radius:8px; border-left:4px solid #27AE60;">
+        <strong>② 専門用語を使わない</strong><br>
+        <span style="font-size:12px; color:#666;">「アップロード」→「取り込む」など、わかる言葉</span>
+      </div>
+      <div style="padding:14px; background:#F4F6F7; border-radius:8px; border-left:4px solid #27AE60;">
+        <strong>③ 次にやることが画面に出る</strong><br>
+        <span style="font-size:12px; color:#666;">「次は[印刷する]を押してください」と案内</span>
+      </div>
+      <div style="padding:14px; background:#F4F6F7; border-radius:8px; border-left:4px solid #27AE60;">
+        <strong>④ やり直しボタンあり</strong><br>
+        <span style="font-size:12px; color:#666;">いつでも1つ前の状態に戻せる</span>
+      </div>
+      <div style="padding:14px; background:#F4F6F7; border-radius:8px; border-left:4px solid #27AE60;">
+        <strong>⑤ 紙運用と両立</strong><br>
+        <span style="font-size:12px; color:#666;">当日の急変対応は紙の赤入れでOK</span>
+      </div>
+      <div style="padding:14px; background:#F4F6F7; border-radius:8px; border-left:4px solid #27AE60;">
+        <strong>⑥ 動画ヘルプあり</strong><br>
+        <span style="font-size:12px; color:#666;">操作で迷ったら5分の動画で確認</span>
+      </div>
+      <div style="padding:14px; background:#F4F6F7; border-radius:8px; border-left:4px solid #27AE60;">
+        <strong>⑦ 電話サポートあり</strong><br>
+        <span style="font-size:12px; color:#666;">困ったら電話で操作支援</span>
+      </div>
+      <div style="padding:14px; background:#F4F6F7; border-radius:8px; border-left:4px solid #27AE60;">
+        <strong>⑧ 失敗しても紙に戻せる</strong><br>
+        <span style="font-size:12px; color:#666;">合わなければ紙運用に完全に戻せる</span>
+      </div>
+    </div>
+
+    <div class="cta-box" style="background:linear-gradient(135deg,#27AE60,#1E8449); margin-top:16px;">
+      <h3>「使えなくなる怖さ」がない設計</h3>
+    </div>
+  </div>
+  <div class="slide-footer">スライド 14 / 16</div>
+</div>
+
+<!-- スライド15: 次のアクション -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>🚀 次のアクション提案</h1>
+  </div>
+  <div class="slide-body">
+    <h2>3ステップで安全に進めます</h2>
+
+    <div class="step-flow">
+      <div class="step highlight">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">本日のデモ視聴（今）</div>
+          <div class="step-desc">「使えそうか」の感触をいただく。決断は今日でなくてOK。</div>
+        </div>
+        <div class="step-action">完了</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">担当者の方へヒアリング（1〜2週間）</div>
+          <div class="step-desc">細かい運用ルールをExcelシートでお聞きします。分かる範囲でOK。</div>
+        </div>
+        <div class="step-action">提案</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">MVP（最低限の動くもの）開発・お試し（1ヶ月）</div>
+          <div class="step-desc">実際に使ってみていただく。ダメならその時点で止められます。</div>
+        </div>
+        <div class="step-action">提案</div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-top:12px;">
+      <div style="padding:12px; background:#EBF5FB; border-radius:8px; text-align:center;">
+        <strong style="color:#2E5984;">💰 費用</strong><br>
+        <span style="font-size:13px;">月5千〜1.5万円のみ</span>
+      </div>
+      <div style="padding:12px; background:#D5F5E3; border-radius:8px; text-align:center;">
+        <strong style="color:#1E8449;">⏱ 期間</strong><br>
+        <span style="font-size:13px;">合計4〜6ヶ月</span>
+      </div>
+      <div style="padding:12px; background:#FEF9E7; border-radius:8px; text-align:center;">
+        <strong style="color:#D68910;">🛡 リスク</strong><br>
+        <span style="font-size:13px;">紙運用にいつでも戻せる</span>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">スライド 15 / 16</div>
+</div>
+
+<!-- スライド16: 質問 -->
+<div class="slide">
+  <div class="slide-header">
+    <h1>💬 ご質問・ご意見</h1>
+  </div>
+  <div class="slide-body">
+    <h2 style="text-align:center;">使い方を見ていただいて、率直なご感想を</h2>
+
+    <ul style="font-size:18px; line-height:2.2; margin:24px 60px;">
+      <li>🎯 これ、シルキーで使ってみたいと思いますか？</li>
+      <li>👨‍⚕️ 現場の担当者の方は使えそうですか？</li>
+      <li>⚠️ 一番の心配事はどこですか？</li>
+      <li>🔧 「ここをこう変えたら…」というご要望はありますか？</li>
+      <li>📅 進めるとしたら、いつ頃スタートが現実的ですか？</li>
+      <li>👥 他に見せた方が良い方はいますか？</li>
+    </ul>
+
+    <div style="margin-top:auto; text-align:center; padding:24px; background:linear-gradient(135deg, #2E5984, #4A90E2); color:white; border-radius:12px;">
+      <h3 style="color:white; font-size:24px; margin-bottom:8px;">本日はありがとうございました</h3>
+      <div style="font-size:14px;">前田 健一郎 / maeda@areit-labo.com</div>
+    </div>
+  </div>
+  <div class="slide-footer">スライド 16 / 16</div>
+</div>
+
+<!-- ナビゲーション -->
+<div class="counter" id="counter">1 / 16</div>
+<div class="nav">
+  <button onclick="prev()" id="prevBtn">←</button>
+  <button onclick="next()" id="nextBtn">→</button>
+</div>
+
+<script>
+let current = 0;
+const slides = document.querySelectorAll('.slide');
+const counter = document.getElementById('counter');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+function show(idx) {
+  slides.forEach(s => s.classList.remove('active'));
+  slides[idx].classList.add('active');
+  counter.textContent = `${idx + 1} / ${slides.length}`;
+  prevBtn.disabled = idx === 0;
+  nextBtn.disabled = idx === slides.length - 1;
+}
+
+function next() {
+  if (current < slides.length - 1) { current++; show(current); }
+}
+
+function prev() {
+  if (current > 0) { current--; show(current); }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') next();
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') prev();
+  if (e.key === 'Home') { current = 0; show(0); }
+  if (e.key === 'End') { current = slides.length - 1; show(current); }
+  if (e.key === 'f' || e.key === 'F') {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen();
+  }
+});
+
+show(0);
+</script>
+
+</body>
+</html>

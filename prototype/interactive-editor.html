@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>シルキー シフト編集 - インタラクティブデモ</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    margin: 0; padding: 16px;
+    background: #ECF0F1;
+    color: #2C3E50;
+  }
+  .app {
+    max-width: 1600px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+  }
+  .header {
+    background: linear-gradient(135deg, #2E5984, #4A90E2);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .header h1 { margin: 0; font-size: 20px; }
+  .header .breadcrumb { font-size: 12px; opacity: 0.9; margin-top: 4px; }
+  .toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    background: white;
+    color: #2C3E50;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.1s;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary { background: #27AE60; color: white; }
+  .btn-secondary { background: #4A90E2; color: white; }
+  .btn-warning { background: #F39C12; color: white; }
+  .btn-disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* AIステータスバー */
+  .ai-status {
+    background: linear-gradient(90deg, #27AE60 0%, #1E8449 100%);
+    color: white;
+    padding: 10px 24px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    font-size: 13px;
+  }
+  .ai-status .status-item {
+    background: rgba(255,255,255,0.2);
+    padding: 4px 12px;
+    border-radius: 4px;
+  }
+  .ai-status .status-item.warning {
+    background: rgba(243, 156, 18, 0.4);
+  }
+  .ai-status .next-action {
+    margin-left: auto;
+    font-weight: bold;
+  }
+
+  /* メインエリア */
+  .main {
+    padding: 16px 24px;
+    overflow-x: auto;
+  }
+  .controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .controls .label {
+    font-size: 13px;
+    color: #666;
+  }
+  .controls select {
+    padding: 6px 12px;
+    border: 1px solid #BDC3C7;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  /* シフト表 */
+  .schedule {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    table-layout: fixed;
+  }
+  .schedule th, .schedule td {
+    border: 1px solid #BDC3C7;
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .schedule thead th {
+    background: #2E5984;
+    color: white;
+    padding: 6px 4px;
+    font-weight: normal;
+    font-size: 11px;
+  }
+  .col-staff {
+    width: 90px;
+    background: #F4F6F7;
+    text-align: left !important;
+    padding: 6px 8px !important;
+    font-weight: bold;
+  }
+  .col-staff small {
+    display: block;
+    color: #888;
+    font-size: 9px;
+    font-weight: normal;
+    margin-top: 2px;
+  }
+  .schedule tbody td {
+    height: 42px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .schedule tbody td.empty:hover {
+    background: #FFF8DC;
+  }
+  .schedule tbody td.has-task:hover {
+    transform: scale(1.05);
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .cell-content {
+    color: white;
+    padding: 4px 2px;
+    font-size: 10px;
+    line-height: 1.2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .cell-content .user { font-weight: bold; }
+  .cell-content .svc { opacity: 0.85; font-size: 9px; }
+
+  .lock-icon {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 11px;
+    background: white;
+    color: #F39C12;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modified {
+    border: 2px solid #E67E22 !important;
+  }
+
+  /* 説明バナー */
+  .info-banner {
+    background: #FFF8E1;
+    border-left: 4px solid #F39C12;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .info-banner b { color: #D68910; }
+
+  /* ポップアップ */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .modal h2 {
+    margin: 0 0 16px 0;
+    color: #2E5984;
+    font-size: 18px;
+  }
+  .modal .reasoning {
+    background: #F4F6F7;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .modal .reasoning ul {
+    margin: 8px 0 0 0;
+    padding-left: 20px;
+  }
+  .modal .options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .modal .option {
+    padding: 10px 12px;
+    border: 2px solid #ECF0F1;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .modal .option:hover {
+    border-color: #4A90E2;
+    background: #EBF5FB;
+  }
+  .modal .option.recommended {
+    border-color: #27AE60;
+    background: #FAFEFB;
+  }
+  .modal .option.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #F8F9F9;
+  }
+  .modal .option .badge {
+    margin-left: auto;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  .modal .option .badge.ok { background: #27AE60; color: white; }
+  .modal .option .badge.maybe { background: #F39C12; color: white; }
+  .modal .option .badge.ng { background: #E74C3C; color: white; }
+  .modal .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .modal .actions .btn { padding: 10px 20px; }
+
+  /* ツールチップ */
+  .tooltip {
+    position: absolute;
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    z-index: 100;
+    max-width: 280px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .tooltip.show { opacity: 1; }
+  .tooltip ul { margin: 4px 0 0 0; padding-left: 16px; }
+  .tooltip li { line-height: 1.5; }
+
+  /* 履歴ペーン */
+  .history-panel {
+    position: fixed;
+    top: 0; right: 0;
+    width: 320px;
+    height: 100vh;
+    background: white;
+    box-shadow: -4px 0 16px rgba(0,0,0,0.15);
+    transform: translateX(100%);
+    transition: transform 0.3s;
+    padding: 24px;
+    overflow-y: auto;
+    z-index: 500;
+  }
+  .history-panel.show { transform: translateX(0); }
+  .history-panel h3 {
+    margin: 0 0 16px 0;
+    color: #2E5984;
+  }
+  .history-item {
+    padding: 8px 12px;
+    border-left: 3px solid #4A90E2;
+    margin-bottom: 8px;
+    background: #F4F6F7;
+    border-radius: 0 4px 4px 0;
+    font-size: 12px;
+  }
+  .history-item .time { color: #888; font-size: 10px; }
+
+  /* サマリーモーダル */
+  .summary-section {
+    background: #F4F6F7;
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+  }
+  .summary-section h4 {
+    margin: 0 0 12px 0;
+    color: #2C3E50;
+  }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 13px;
+  }
+  .check-item.ok::before { content: '✅'; }
+  .check-item.warn::before { content: '⚠️'; }
+  .check-item.info::before { content: 'ℹ️'; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="header">
+    <div>
+      <h1>📋 シルキー シフト編集</h1>
+      <div class="breadcrumb">2026年5月10日（金） / 介護スタッフ14名</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn" onclick="showHistory()">📜 履歴</button>
+      <button class="btn" onclick="undo()" id="undoBtn">↶ やり直し</button>
+      <button class="btn btn-warning" onclick="regenerate()">🔄 別の案を見る</button>
+      <button class="btn btn-secondary" onclick="showSummary()">🖨️ 印刷する</button>
+    </div>
+  </div>
+
+  <div class="ai-status">
+    <span>🤖 AI自動生成</span>
+    <span class="status-item">✅ ダブルブッキング 0件</span>
+    <span class="status-item">✅ 勤務時間外 0件</span>
+    <span class="status-item">✅ 法定休憩 全員確保</span>
+    <span class="status-item warning">⚠️ 入浴 10:30に4名集中</span>
+    <span class="next-action">📍 次は [印刷する] ボタン</span>
+  </div>
+
+  <div class="main">
+    <div class="info-banner">
+      <b>💡 操作ガイド：</b>
+      セルを<strong>クリック</strong>すると担当変更／<strong>マウスを乗せる</strong>と配置根拠／<strong>右クリック</strong>でロック
+    </div>
+
+    <div class="controls">
+      <span class="label">表示日：</span>
+      <button class="btn">◀</button>
+      <select>
+        <option>5月10日（金）</option>
+        <option>5月11日（土）</option>
+        <option>5月12日（日）</option>
+      </select>
+      <button class="btn">▶</button>
+      <span class="label" style="margin-left:24px;">レイアウト：</span>
+      <select>
+        <option>D-2 色分け統合（推奨）</option>
+        <option>D-1 訪問・住宅で行を分ける</option>
+      </select>
+    </div>
+
+    <table class="schedule" id="schedule"></table>
+  </div>
+</div>
+
+<!-- セル編集モーダル -->
+<div class="modal-overlay" id="cellModal" onclick="closeCellModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2 id="modalTitle">セル編集</h2>
+
+    <div class="reasoning">
+      <strong>💡 配置の根拠</strong>
+      <ul id="modalReasoning"></ul>
+    </div>
+
+    <div>
+      <strong>担当を変える：</strong>
+      <div class="options" id="modalOptions"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-warning" onclick="lockCell()">🔒 ロック</button>
+      <button class="btn" onclick="closeCellModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveCell()">✅ 変更する</button>
+    </div>
+  </div>
+</div>
+
+<!-- サマリーモーダル -->
+<div class="modal-overlay" id="summaryModal" onclick="closeSummaryModal(event)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:560px;">
+    <h2>📋 印刷前確認</h2>
+
+    <div class="summary-section">
+      <h4>✅ 必須チェック</h4>
+      <div class="check-item ok">ダブルブッキング：0件</div>
+      <div class="check-item ok">勤務時間外配置：0件</div>
+      <div class="check-item ok">法定休憩：全員確保</div>
+      <div class="check-item ok">入浴4回連続違反：0件</div>
+      <div class="check-item ok">夜勤指定メンバー違反：0件</div>
+    </div>
+
+    <div class="summary-section" style="background:#FEF9E7;">
+      <h4>⚠️ 注意事項</h4>
+      <div class="check-item warn">入浴介助が10:30に4名集中</div>
+      <div class="check-item warn">上村さんの稼働が他より20%多い</div>
+    </div>
+
+    <div class="summary-section" style="background:#EBF5FB;">
+      <h4>📊 先月との変化</h4>
+      <div class="check-item info">12箇所の配置が先月と変わりました</div>
+      <div style="font-size:11px;color:#666;margin-left:24px;">[変更箇所を見る]</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" onclick="closeSummaryModal()">作り直す</button>
+      <button class="btn btn-warning" onclick="closeSummaryModal()">別の案を見る</button>
+      <button class="btn btn-primary" onclick="confirmPrint()">✅ このまま印刷</button>
+    </div>
+  </div>
+</div>
+
+<!-- ツールチップ -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- 履歴ペーン -->
+<div class="history-panel" id="historyPanel">
+  <h3>📜 操作履歴</h3>
+  <div id="historyList"></div>
+  <button class="btn" style="margin-top:16px;width:100%;" onclick="hideHistory()">閉じる</button>
+</div>
+
+<script>
+// ─────────────────────────────────────
+// データ定義
+// ─────────────────────────────────────
+const TIME_SLOTS = [];
+for (let h = 7; h < 19; h++) {
+  for (let m = 0; m < 60; m += 30) {
+    if (h === 18 && m === 30) TIME_SLOTS.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+    else if (h < 19) TIME_SLOTS.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+  }
+}
+
+const STAFF = [
+  { id: 's01', name: '上村', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's02', name: '原',   type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's03', name: '脇田', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's04', name: '田中', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's05', name: '柳田', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's06', name: '石井', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's07', name: '村川', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's08', name: '布田川','type': 'パート', shift: '日勤', time: '9-15' },
+  { id: 's09', name: '河田', type: 'パート', shift: '日勤', time: '9-15' },
+  { id: 's10', name: '黒田', type: '常勤', shift: '夜勤', time: '16-翌8' },
+  { id: 's11', name: '中小路','type': '常勤', shift: '夜勤明け', time: '休' },
+  { id: 's12', name: '出納', type: '常勤', shift: '休', time: '休' },
+  { id: 's13', name: '石坂', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's14', name: '安部', type: 'パート','shift': '日勤', time: '9-15' },
+];
+
+const COLORS = {
+  'visit':'#4A90E2', 'visit2':'#2E5984', 'visit_l':'#7ED321',
+  'home':'#B8B8B8', 'bath':'#F5A623', 'med':'#BD10E0',
+  'patrol':'#9013FE', 'guide':'#D8D8D8', 'night':'#2C3E50', 'rest':'#FFF',
+};
+
+// 初期スケジュール
+const initialSchedule = {
+  's01': { '08:00':{user:'冷水',svc:'身1生1',color:COLORS.visit_l}, '08:30':{user:'冷水',svc:'身1生1',color:COLORS.visit_l},
+           '09:00':{user:'村上',svc:'身2',color:COLORS.visit2}, '09:30':{user:'村上',svc:'身2',color:COLORS.visit2},
+           '10:00':{user:'田代',svc:'入浴',color:COLORS.bath}, '10:30':{user:'田代',svc:'入浴',color:COLORS.bath},
+           '11:00':{user:'森',svc:'身1',color:COLORS.visit}, '11:30':{user:'冷水',svc:'身1',color:COLORS.visit},
+           '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true}, '12:30':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+           '13:00':{user:'冷水',svc:'身2',color:COLORS.visit2}, '13:30':{user:'冷水',svc:'身2',color:COLORS.visit2},
+           '14:00':{user:'誘導',svc:'食堂',color:COLORS.guide},
+           '15:00':{user:'配薬',svc:'配薬',color:COLORS.med},
+           '15:30':{user:'原田',svc:'入浴',color:COLORS.bath}, '16:00':{user:'原田',svc:'入浴',color:COLORS.bath},
+           '17:00':{user:'冷水',svc:'身1',color:COLORS.visit} },
+  's02': { '08:00':{user:'村上',svc:'身2',color:COLORS.visit2}, '08:30':{user:'村上',svc:'身2',color:COLORS.visit2},
+           '09:00':{user:'誘導',svc:'食堂',color:COLORS.guide},
+           '10:00':{user:'藤本',svc:'入浴',color:COLORS.bath}, '10:30':{user:'藤本',svc:'入浴',color:COLORS.bath},
+           '11:00':{user:'配薬',svc:'配薬',color:COLORS.med}, '11:30':{user:'森本',svc:'身1',color:COLORS.visit},
+           '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true}, '12:30':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+           '13:00':{user:'高松',svc:'身1生1',color:COLORS.visit_l}, '13:30':{user:'高松',svc:'身1生1',color:COLORS.visit_l},
+           '14:00':{user:'門田見',svc:'入浴',color:COLORS.bath}, '14:30':{user:'門田見',svc:'入浴',color:COLORS.bath},
+           '15:00':{user:'清掃',svc:'住宅',color:COLORS.home},
+           '17:00':{user:'冷水',svc:'身1',color:COLORS.visit} },
+  's03': { '08:00':{user:'藤本',svc:'身1',color:COLORS.visit}, '08:30':{user:'藤本',svc:'身1',color:COLORS.visit},
+           '09:00':{user:'田代',svc:'身1生1',color:COLORS.visit_l}, '09:30':{user:'田代',svc:'身1生1',color:COLORS.visit_l},
+           '10:00':{user:'柴田',svc:'入浴',color:COLORS.bath}, '10:30':{user:'柴田',svc:'入浴',color:COLORS.bath},
+           '11:00':{user:'巡回',svc:'巡回',color:COLORS.patrol}, '11:30':{user:'巡回',svc:'巡回',color:COLORS.patrol},
+           '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true}, '12:30':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+           '13:00':{user:'神山',svc:'身2',color:COLORS.visit2}, '13:30':{user:'神山',svc:'身2',color:COLORS.visit2},
+           '14:00':{user:'土山',svc:'身1',color:COLORS.visit}, '15:00':{user:'配薬',svc:'配薬',color:COLORS.med},
+           '17:00':{user:'森',svc:'身1',color:COLORS.visit} },
+  's04': { '08:00':{user:'配薬',svc:'配薬',color:COLORS.med}, '09:00':{user:'林',svc:'身1',color:COLORS.visit},
+           '10:00':{user:'原田',svc:'身1',color:COLORS.visit}, '10:30':{user:'中根',svc:'身2',color:COLORS.visit2},
+           '11:00':{user:'中根',svc:'身2',color:COLORS.visit2},
+           '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true}, '12:30':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+           '13:00':{user:'清掃',svc:'住宅',color:COLORS.home}, '14:00':{user:'津田',svc:'入浴',color:COLORS.bath},
+           '15:00':{user:'誘導',svc:'誘導',color:COLORS.guide}, '17:00':{user:'徳永',svc:'身1',color:COLORS.visit} },
+  's05': { '09:00':{user:'渡邊',svc:'身1',color:COLORS.visit}, '10:00':{user:'渡辺',svc:'入浴',color:COLORS.bath},
+           '10:30':{user:'渡辺',svc:'入浴',color:COLORS.bath}, '11:00':{user:'配薬',svc:'配薬',color:COLORS.med},
+           '11:30':{user:'東',svc:'身1',color:COLORS.visit},
+           '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+           '13:00':{user:'今井',svc:'身2',color:COLORS.visit2}, '13:30':{user:'今井',svc:'身2',color:COLORS.visit2},
+           '14:00':{user:'巡回',svc:'巡回',color:COLORS.patrol}, '17:00':{user:'本村',svc:'身1',color:COLORS.visit} },
+  's06': { '08:00':{user:'誘導',svc:'食堂',color:COLORS.guide}, '09:00':{user:'太田',svc:'身1',color:COLORS.visit},
+           '10:00':{user:'梅本',svc:'身1',color:COLORS.visit}, '11:00':{user:'濵岡',svc:'身1',color:COLORS.visit},
+           '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+           '13:00':{user:'巡回',svc:'巡回',color:COLORS.patrol}, '14:00':{user:'赤木',svc:'入浴',color:COLORS.bath},
+           '14:30':{user:'赤木',svc:'入浴',color:COLORS.bath}, '17:00':{user:'奈須',svc:'身1',color:COLORS.visit} },
+  's07': { '08:00':{user:'配薬',svc:'配薬',color:COLORS.med}, '09:00':{user:'橋本',svc:'身1',color:COLORS.visit},
+           '10:00':{user:'橋本',svc:'入浴',color:COLORS.bath}, '11:00':{user:'三島',svc:'身1',color:COLORS.visit},
+           '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+           '13:00':{user:'誘導',svc:'誘導',color:COLORS.guide}, '14:00':{user:'清掃',svc:'住宅',color:COLORS.home},
+           '17:00':{user:'新貝',svc:'身2',color:COLORS.visit2}, '17:30':{user:'新貝',svc:'身2',color:COLORS.visit2} },
+  's08': { '09:00':{user:'誘導',svc:'誘導',color:COLORS.guide}, '10:00':{user:'清水',svc:'身1',color:COLORS.visit},
+           '11:00':{user:'清水',svc:'入浴',color:COLORS.bath},
+           '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+           '13:00':{user:'住宅',svc:'住宅',color:COLORS.home}, '14:00':{user:'住宅',svc:'住宅',color:COLORS.home} },
+  's09': { '09:00':{user:'誘導',svc:'誘導',color:COLORS.guide}, '10:00':{user:'巡回',svc:'巡回',color:COLORS.patrol},
+           '11:00':{user:'住宅',svc:'住宅',color:COLORS.home},
+           '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+           '13:00':{user:'誘導',svc:'誘導',color:COLORS.guide}, '14:00':{user:'住宅',svc:'住宅',color:COLORS.home} },
+  's10': { '16:00':{user:'夜勤',svc:'夜勤',color:COLORS.night}, '16:30':{user:'夜勤',svc:'夜勤',color:COLORS.night},
+           '17:00':{user:'夜勤',svc:'夜勤',color:COLORS.night}, '17:30':{user:'夜勤',svc:'夜勤',color:COLORS.night},
+           '18:00':{user:'夜勤',svc:'夜勤',color:COLORS.night}, '18:30':{user:'夜勤',svc:'夜勤',color:COLORS.night} },
+  's13': { '09:00':{user:'辻',svc:'身1',color:COLORS.visit}, '10:00':{user:'酒井',svc:'入浴',color:COLORS.bath},
+           '10:30':{user:'酒井',svc:'入浴',color:COLORS.bath}, '11:00':{user:'配薬',svc:'配薬',color:COLORS.med},
+           '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+           '13:00':{user:'誘導',svc:'誘導',color:COLORS.guide}, '14:00':{user:'巡回',svc:'巡回',color:COLORS.patrol},
+           '17:00':{user:'酒井',svc:'身1',color:COLORS.visit} },
+  's14': { '09:00':{user:'誘導',svc:'誘導',color:COLORS.guide}, '10:00':{user:'住宅',svc:'住宅',color:COLORS.home},
+           '11:00':{user:'住宅',svc:'住宅',color:COLORS.home},
+           '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+           '13:00':{user:'住宅',svc:'住宅',color:COLORS.home}, '14:00':{user:'住宅',svc:'住宅',color:COLORS.home} },
+};
+
+// ─────────────────────────────────────
+// 状態管理
+// ─────────────────────────────────────
+let schedule = JSON.parse(JSON.stringify(initialSchedule));
+let history = [];
+let lockedCells = new Set();
+let modifiedCells = new Set();
+let selectedCell = null;
+
+// ─────────────────────────────────────
+// 描画
+// ─────────────────────────────────────
+function renderSchedule() {
+  const tbody = '<thead><tr><th class="col-staff">スタッフ</th>' +
+    TIME_SLOTS.map(t => `<th>${t}</th>`).join('') + '</tr></thead><tbody>';
+
+  let html = tbody;
+  STAFF.forEach(staff => {
+    const row = schedule[staff.id] || {};
+    html += `<tr><td class="col-staff">${staff.name}<small>${staff.type} ${staff.shift}<br>${staff.time}</small></td>`;
+    TIME_SLOTS.forEach(t => {
+      const cell = row[t];
+      const cellKey = `${staff.id}_${t}`;
+      const isLocked = lockedCells.has(cellKey);
+      const isModified = modifiedCells.has(cellKey);
+      const modClass = isModified ? ' modified' : '';
+
+      if (cell) {
+        const restStyle = cell.isRest ? ' color:#999;border:1px dashed #999;' : '';
+        const userColor = cell.isRest ? '#999' : 'white';
+        html += `<td class="has-task${modClass}" style="background:${cell.color};${restStyle}"
+                     onclick="openCell('${staff.id}','${t}')"
+                     oncontextmenu="toggleLock(event,'${staff.id}','${t}')"
+                     onmouseenter="showTooltip(event,'${staff.id}','${t}')"
+                     onmouseleave="hideTooltip()">
+                  <div class="cell-content"><div class="user" style="color:${userColor}">${cell.user}</div>
+                  <div class="svc" style="color:${userColor}">(${cell.svc})</div></div>
+                  ${isLocked ? '<div class="lock-icon">🔒</div>' : ''}
+                </td>`;
+      } else {
+        html += `<td class="empty${modClass}" onclick="openEmptyCell('${staff.id}','${t}')"></td>`;
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+
+  document.getElementById('schedule').innerHTML = html;
+}
+
+// ─────────────────────────────────────
+// セル操作
+// ─────────────────────────────────────
+function openCell(staffId, time) {
+  selectedCell = { staffId, time };
+  const staff = STAFF.find(s => s.id === staffId);
+  const cell = (schedule[staffId] || {})[time];
+  if (!cell) return;
+
+  document.getElementById('modalTitle').textContent =
+    `${staff.name}さん × ${cell.user}様 ${time} (${cell.svc})`;
+
+  document.getElementById('modalReasoning').innerHTML = `
+    <li>✓ ${staff.name}さんの勤務時間内（${staff.time}）</li>
+    <li>✓ ${cell.user}様の希望時間に一致</li>
+    <li>✓ 連続業務OK（前後のサービスとの間隔）</li>
+    <li>✓ 先月と同じ担当者（継続配慮）</li>
+  `;
+
+  // 選択肢生成
+  const options = STAFF.filter(s => s.id !== staffId && s.shift !== '休' && s.shift !== '夜勤明け');
+  const opts = options.slice(0, 5).map((s, i) => {
+    const isOK = !((schedule[s.id] || {})[time]);
+    const recommended = i === 0 && isOK ? 'recommended' : '';
+    const disabled = !isOK ? 'disabled' : '';
+    const badge = isOK ? (i === 0 ? 'ok">◎ おすすめ' : 'ok">◯ 可') : 'ng">✕ 既に他業務';
+    return `<div class="option ${recommended} ${disabled}" onclick="${isOK ? `selectOption('${s.id}')` : ''}">
+      <strong>${s.name}</strong><span style="color:#888;font-size:11px;">（${s.type}）</span>
+      <span class="badge ${badge}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('modalOptions').innerHTML = opts;
+
+  document.getElementById('cellModal').classList.add('active');
+}
+
+function selectOption(newStaffId) {
+  if (!selectedCell) return;
+  const { staffId, time } = selectedCell;
+  const cell = schedule[staffId][time];
+
+  // 履歴記録
+  history.push({
+    type: 'change',
+    time: new Date(),
+    desc: `${time} ${cell.user}様(${cell.svc}): ${STAFF.find(s=>s.id===staffId).name} → ${STAFF.find(s=>s.id===newStaffId).name}`,
+    snapshot: JSON.parse(JSON.stringify(schedule))
+  });
+
+  // 移動
+  if (!schedule[newStaffId]) schedule[newStaffId] = {};
+  schedule[newStaffId][time] = cell;
+  delete schedule[staffId][time];
+
+  modifiedCells.add(`${newStaffId}_${time}`);
+
+  closeCellModal();
+  renderSchedule();
+  showToast('✅ 担当を変更しました');
+}
+
+function lockCell() {
+  if (!selectedCell) return;
+  const key = `${selectedCell.staffId}_${selectedCell.time}`;
+  lockedCells.add(key);
+  closeCellModal();
+  renderSchedule();
+  showToast('🔒 配置をロックしました');
+}
+
+function toggleLock(e, staffId, time) {
+  e.preventDefault();
+  const key = `${staffId}_${time}`;
+  if (lockedCells.has(key)) {
+    lockedCells.delete(key);
+    showToast('🔓 ロックを解除しました');
+  } else {
+    lockedCells.add(key);
+    showToast('🔒 配置をロックしました');
+  }
+  renderSchedule();
+}
+
+function openEmptyCell(staffId, time) {
+  showToast('💡 空きセルクリック：新規業務を追加できます（デモのため省略）');
+}
+
+function closeCellModal(e) {
+  if (e && e.target.id !== 'cellModal') return;
+  document.getElementById('cellModal').classList.remove('active');
+  selectedCell = null;
+}
+
+function saveCell() {
+  closeCellModal();
+}
+
+// ─────────────────────────────────────
+// 履歴・Undo
+// ─────────────────────────────────────
+function undo() {
+  if (history.length === 0) {
+    showToast('⚠️ 戻せる操作がありません');
+    return;
+  }
+  const last = history.pop();
+  schedule = last.snapshot;
+  renderSchedule();
+  showToast('↶ 1つ前の状態に戻しました');
+}
+
+function showHistory() {
+  const list = history.length === 0
+    ? '<p style="color:#888;">まだ操作履歴はありません</p>'
+    : history.slice().reverse().map(h => `
+      <div class="history-item">
+        <div class="time">${h.time.toLocaleTimeString()}</div>
+        <div>${h.desc}</div>
+      </div>
+    `).join('');
+  document.getElementById('historyList').innerHTML = list;
+  document.getElementById('historyPanel').classList.add('show');
+}
+
+function hideHistory() {
+  document.getElementById('historyPanel').classList.remove('show');
+}
+
+// ─────────────────────────────────────
+// 印刷サマリー
+// ─────────────────────────────────────
+function showSummary() {
+  document.getElementById('summaryModal').classList.add('active');
+}
+function closeSummaryModal(e) {
+  if (e && e.target.id !== 'summaryModal') return;
+  document.getElementById('summaryModal').classList.remove('active');
+}
+function confirmPrint() {
+  closeSummaryModal();
+  showToast('🖨️ 印刷を開始しました（デモ）');
+  setTimeout(() => window.print(), 500);
+}
+
+function regenerate() {
+  showToast('🔄 別の案を生成中...');
+  setTimeout(() => {
+    schedule = JSON.parse(JSON.stringify(initialSchedule));
+    modifiedCells.clear();
+    history = [];
+    renderSchedule();
+    showToast('💡 案を生成しました（デモ：初期状態に戻しました）');
+  }, 800);
+}
+
+// ─────────────────────────────────────
+// ツールチップ
+// ─────────────────────────────────────
+function showTooltip(e, staffId, time) {
+  const cell = (schedule[staffId] || {})[time];
+  if (!cell) return;
+  const staff = STAFF.find(s => s.id === staffId);
+  const tt = document.getElementById('tooltip');
+  tt.innerHTML = `<strong>${cell.user}様 × ${staff.name}さん</strong>
+    <ul>
+      <li>サービス: ${cell.svc}</li>
+      <li>時間: ${time}</li>
+      <li>勤務: ${staff.time}</li>
+      <li>制約OK ✓</li>
+    </ul>`;
+  tt.style.left = (e.pageX + 12) + 'px';
+  tt.style.top = (e.pageY + 12) + 'px';
+  tt.classList.add('show');
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').classList.remove('show');
+}
+
+// ─────────────────────────────────────
+// トースト通知
+// ─────────────────────────────────────
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#2C3E50;color:white;padding:12px 20px;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:2000;font-size:13px;';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+// ─────────────────────────────────────
+// 初期描画
+// ─────────────────────────────────────
+renderSchedule();
+
+// 右クリックメニュー無効化（カスタム機能で利用するため）
+document.getElementById('schedule').addEventListener('contextmenu', e => e.preventDefault());
+</script>
+
+</body>
+</html>

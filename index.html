@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>シルキー シフト自動化 - デモ環境</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    background: linear-gradient(135deg, #ECF0F1 0%, #BDC3C7 100%);
+    color: #2C3E50;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  .header {
+    background: linear-gradient(135deg, #2E5984, #4A90E2);
+    color: white; padding: 32px 40px; border-radius: 12px;
+    margin-bottom: 24px; text-align: center;
+  }
+  .header h1 { font-size: 28px; margin-bottom: 8px; }
+  .header .badge-set { margin-top: 12px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .header .badge {
+    background: rgba(255,255,255,0.2); padding: 4px 12px;
+    border-radius: 16px; font-size: 12px;
+  }
+  .notice {
+    background: #FFF8E1; border-left: 6px solid #F39C12;
+    padding: 16px 20px; border-radius: 4px; margin-bottom: 20px;
+    font-size: 14px;
+  }
+  .notice b { color: #D68910; }
+  .section {
+    background: white; border-radius: 12px; padding: 32px;
+    margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .section h2 {
+    color: #2E5984; border-left: 4px solid #2E5984;
+    padding-left: 12px; margin-bottom: 16px; font-size: 22px;
+  }
+  .demo-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .demo-card {
+    background: white; border: 2px solid #ECF0F1;
+    border-radius: 12px; padding: 20px; transition: all 0.2s;
+    text-decoration: none; color: inherit; display: flex;
+    flex-direction: column; gap: 10px; cursor: pointer;
+  }
+  .demo-card:hover {
+    border-color: #4A90E2; box-shadow: 0 4px 12px rgba(74,144,226,0.2);
+    transform: translateY(-2px);
+  }
+  .demo-card .icon { font-size: 36px; line-height: 1; }
+  .demo-card h3 { font-size: 18px; color: #2E5984; }
+  .demo-card .desc { font-size: 13px; color: #666; flex: 1; line-height: 1.5; }
+  .demo-card .badge {
+    display: inline-block; padding: 4px 10px; border-radius: 12px;
+    font-size: 11px; font-weight: bold; align-self: flex-start;
+  }
+  .demo-card .badge.main { background: #F39C12; color: white; }
+  .demo-card .badge.sub { background: #4A90E2; color: white; }
+  .demo-card .open-btn {
+    background: #2E5984; color: white; padding: 10px 16px;
+    border-radius: 6px; text-align: center; font-size: 13px;
+    font-weight: bold; margin-top: auto;
+  }
+  .demo-card:hover .open-btn { background: #4A90E2; }
+  .footer {
+    text-align: center; margin-top: 24px; color: #888; font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>🏠 シルキー シフト自動化システム</h1>
+    <p style="opacity:0.9;font-size:14px;">業務改善デモサイト</p>
+    <div class="badge-set">
+      <span class="badge">📍 限定公開</span>
+      <span class="badge">🔒 URL知る人のみアクセス可</span>
+      <span class="badge">💰 費用ゼロ</span>
+    </div>
+  </div>
+
+  <div class="notice">
+    <b>📌 ご利用にあたって：</b>
+    このサイトは <strong>シルキー業務改善プロジェクトのデモ環境</strong> です。
+    URLを知っている方のみアクセス可能。検索エンジンには表示されません。
+    動作確認・関係者ご確認用にご利用ください。
+  </div>
+
+  <div class="section">
+    <h2>🎬 メインデモ</h2>
+    <p style="margin-bottom:16px; color:#666; font-size:14px;">
+      まずは下のオレンジカード「実演デモアプリ」をご覧ください。実際の操作感を体験できます。
+    </p>
+
+    <div class="demo-grid">
+      <a href="prototype/demo-app.html" class="demo-card" style="background:linear-gradient(135deg,#FFF8E1,#FEF9E7);border:3px solid #F39C12;">
+        <span class="badge main">⭐ 実演デモ（メイン）</span>
+        <div class="icon">🎬</div>
+        <h3>実演デモアプリ</h3>
+        <div class="desc">
+          PDFアップロード→処理→シフト作成→編集→印刷の<br>
+          全工程を実際に操作できます。
+        </div>
+        <div class="open-btn" style="background:#F39C12;">▶️ 体験する</div>
+      </a>
+
+      <a href="slides/presentation.html" class="demo-card">
+        <span class="badge sub">プレゼン資料</span>
+        <div class="icon">📊</div>
+        <h3>プレゼン資料</h3>
+        <div class="desc">
+          16スライド。業務シーン別の使い方説明。<br>
+          F キーで全画面、矢印キーで進む。
+        </div>
+        <div class="open-btn">▶️ 開く</div>
+      </a>
+
+      <a href="summary/one-pager.html" class="demo-card">
+        <span class="badge sub">配布用</span>
+        <div class="icon">📄</div>
+        <h3>1枚サマリー</h3>
+        <div class="desc">
+          プロジェクトの全体像をA4 1枚にまとめました。
+        </div>
+        <div class="open-btn">▶️ 開く</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>🔧 個別デモ（参考）</h2>
+    <p style="margin-bottom:16px; color:#666; font-size:14px;">
+      個別の機能だけ確認したい場合はこちら。
+    </p>
+
+    <div class="demo-grid">
+      <a href="prototype/bulk-demo.html" class="demo-card">
+        <span class="badge sub">PDF処理</span>
+        <div class="icon">⚡</div>
+        <h3>大量PDF処理</h3>
+        <div class="desc">48名分のPDFを15秒で処理した結果。</div>
+        <div class="open-btn">▶️ 開く</div>
+      </a>
+
+      <a href="prototype/mock-daily.html" class="demo-card">
+        <span class="badge sub">シフト表</span>
+        <div class="icon">📅</div>
+        <h3>シフト表モック</h3>
+        <div class="desc">完成シフト表のイメージ（D-2レイアウト）。</div>
+        <div class="open-btn">▶️ 開く</div>
+      </a>
+
+      <a href="prototype/interactive-editor.html" class="demo-card">
+        <span class="badge sub">編集</span>
+        <div class="icon">🖱️</div>
+        <h3>編集体験</h3>
+        <div class="desc">クリック・ホバー・ロック等の操作を体験。</div>
+        <div class="open-btn">▶️ 開く</div>
+      </a>
+
+      <a href="prototype/sample-report.html" class="demo-card">
+        <span class="badge sub">参考</span>
+        <div class="icon">📋</div>
+        <h3>抽出結果レポート</h3>
+        <div class="desc">サンプルPDFから自動抽出された詳細データ。</div>
+        <div class="open-btn">▶️ 開く</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    シルキー シフト自動化プロジェクト デモ環境<br>
+    お問合せ: 前田 健一郎 (maeda@areit-labo.com)
+  </div>
+
+</div>
+</body>
+</html>

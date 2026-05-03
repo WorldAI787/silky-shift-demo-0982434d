@@ -1,0 +1,2445 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>シルキー シフト作成システム - デモアプリ</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    background: #ECF0F1;
+    color: #2C3E50;
+    min-height: 100vh;
+  }
+
+  /* ヘッダー */
+  .app-header {
+    background: linear-gradient(135deg, #2E5984, #4A90E2);
+    color: white;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .app-header h1 { font-size: 22px; }
+  .app-header .user-info { font-size: 13px; opacity: 0.9; }
+
+  /* ステップインジケーター */
+  .stepper {
+    background: white;
+    padding: 16px 24px;
+    border-bottom: 2px solid #ECF0F1;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+  .step-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: #ECF0F1;
+    color: #888;
+    font-size: 13px;
+    font-weight: bold;
+    transition: all 0.3s;
+  }
+  .step-pill.active {
+    background: #4A90E2;
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.4);
+  }
+  .step-pill.done {
+    background: #27AE60;
+    color: white;
+  }
+  .step-pill .num {
+    background: rgba(255,255,255,0.3);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+  .step-pill.active .num { background: white; color: #4A90E2; }
+  .step-pill.done .num { background: white; color: #27AE60; }
+  .arrow { color: #BDC3C7; align-self: center; }
+
+  /* メインエリア */
+  .main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  .step-content { display: none; }
+  .step-content.active { display: block; animation: slideIn 0.4s; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    color: #2E5984;
+    margin-bottom: 16px;
+    border-left: 4px solid #2E5984;
+    padding-left: 12px;
+  }
+
+  /* ナビ */
+  .next-action {
+    background: #FFF8E1;
+    border-left: 6px solid #F39C12;
+    padding: 12px 20px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  .next-action b { color: #D68910; }
+
+  /* Step 1: ファイルドロップ */
+  .drop-zone {
+    border: 3px dashed #BDC3C7;
+    border-radius: 12px;
+    padding: 80px 40px;
+    text-align: center;
+    background: #FAFBFC;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: #4A90E2;
+    background: #EBF5FB;
+    transform: scale(1.01);
+  }
+  .drop-zone .icon { font-size: 64px; margin-bottom: 16px; }
+  .drop-zone h3 { font-size: 22px; color: #2E5984; margin-bottom: 8px; }
+  .drop-zone p { color: #666; }
+  .drop-zone input[type="file"] { display: none; }
+  .drop-zone .btn {
+    margin-top: 16px;
+    padding: 12px 32px;
+    background: #4A90E2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  /* 処理中 */
+  .processing {
+    text-align: center;
+    padding: 40px;
+  }
+  .processing .spinner {
+    width: 64px;
+    height: 64px;
+    border: 6px solid #ECF0F1;
+    border-top-color: #4A90E2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .progress-bar {
+    background: #ECF0F1;
+    height: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 16px auto;
+    max-width: 480px;
+  }
+  .progress-fill {
+    background: linear-gradient(90deg, #27AE60, #4A90E2);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s;
+    text-align: center;
+    color: white;
+    line-height: 24px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  .processing-log {
+    text-align: left;
+    max-width: 600px;
+    margin: 16px auto;
+    font-family: monospace;
+    font-size: 12px;
+    background: #2C3E50;
+    color: #2ECC71;
+    padding: 16px;
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  /* Step 2: 結果テーブル */
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .sum-card {
+    background: linear-gradient(135deg, #4A90E2, #2E5984);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .sum-card.success { background: linear-gradient(135deg, #27AE60, #1E8449); }
+  .sum-card.warning { background: linear-gradient(135deg, #F39C12, #D68910); }
+  .sum-card.error { background: linear-gradient(135deg, #E74C3C, #C0392B); }
+  .sum-card .big { font-size: 36px; font-weight: bold; line-height: 1; }
+  .sum-card .label { font-size: 12px; margin-top: 8px; opacity: 0.9; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { border: 1px solid #BDC3C7; padding: 8px 12px; }
+  th { background: #2E5984; color: white; text-align: left; }
+  tr.success td { background: #FAFEFB; }
+  tr.warning td { background: #FEF9E7; }
+  tr.error td { background: #FDEDEC; }
+
+  /* ボタン */
+  .btn-primary {
+    background: #27AE60;
+    color: white;
+    border: none;
+    padding: 16px 40px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(39, 174, 96, 0.4); }
+  .btn-secondary {
+    background: #4A90E2;
+    color: white;
+    border: none;
+    padding: 16px 40px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .btn-secondary:hover { background: #2E5984; }
+  .btn-warning {
+    background: #F39C12; color: white; border: none;
+    padding: 12px 24px; border-radius: 6px; font-size: 14px;
+    font-weight: bold; cursor: pointer;
+  }
+  .btn-back {
+    background: #95A5A6; color: white; border: none;
+    padding: 12px 24px; border-radius: 6px; cursor: pointer;
+    font-size: 14px;
+  }
+
+  .actions { text-align: center; margin: 24px 0; }
+  .actions button { margin: 0 8px; }
+
+  /* シフト表 */
+  .ai-status {
+    background: linear-gradient(90deg, #27AE60, #1E8449);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 13px;
+  }
+  .ai-status .badge {
+    background: rgba(255,255,255,0.2);
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+  .ai-status .badge.warning { background: rgba(243,156,18,0.4); }
+
+  .schedule {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    table-layout: fixed;
+  }
+  .schedule th, .schedule td {
+    border: 1px solid #BDC3C7;
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .schedule thead th {
+    background: #2E5984;
+    color: white;
+    padding: 6px 4px;
+    font-size: 10px;
+    font-weight: normal;
+  }
+  .col-staff {
+    width: 90px !important;
+    background: #F4F6F7 !important;
+    color: #2C3E50 !important;
+    text-align: left !important;
+    padding: 6px 8px !important;
+    font-weight: bold;
+  }
+  .col-staff small { display: block; color: #888; font-size: 9px; font-weight: normal; }
+  .schedule tbody td {
+    height: 38px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .schedule tbody td.has-task:hover {
+    transform: scale(1.05);
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .schedule tbody td.empty:hover { background: #FFF8DC; }
+  .cell-content {
+    color: white;
+    padding: 3px 2px;
+    font-size: 10px;
+    line-height: 1.2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .cell-content .user { font-weight: bold; }
+  .cell-content .svc { opacity: 0.85; font-size: 9px; }
+  .lock-icon {
+    position: absolute; top: 2px; right: 2px;
+    font-size: 11px; background: white; color: #F39C12;
+    width: 14px; height: 14px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modified { border: 2px solid #E67E22 !important; }
+
+  .legend {
+    background: #F4F6F7;
+    padding: 12px;
+    border-radius: 6px;
+    margin: 12px 0;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 11px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .legend-color { width: 16px; height: 16px; border-radius: 3px; }
+
+  /* モーダル */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 1000;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: white; border-radius: 8px; padding: 24px;
+    max-width: 480px; width: 90%;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .modal h2 { margin-bottom: 16px; color: #2E5984; }
+  .modal .reasoning {
+    background: #F4F6F7; padding: 12px;
+    border-radius: 6px; margin-bottom: 16px; font-size: 13px;
+  }
+  .modal .options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .modal .option {
+    padding: 10px 12px; border: 2px solid #ECF0F1;
+    border-radius: 6px; cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .modal .option:hover { border-color: #4A90E2; background: #EBF5FB; }
+  .modal .option.recommended { border-color: #27AE60; background: #FAFEFB; }
+  .modal .option.disabled { opacity: 0.5; cursor: not-allowed; }
+  .modal .option .badge { margin-left: auto; font-size: 11px; padding: 2px 6px; border-radius: 3px; }
+  .modal .option .badge.ok { background: #27AE60; color: white; }
+  .modal .actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* トースト */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #2C3E50; color: white;
+    padding: 12px 20px; border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 2000; font-size: 13px;
+    animation: slideIn 0.3s;
+  }
+  .toast.success { background: #27AE60; }
+  .toast.warning { background: #F39C12; }
+  .toast.error { background: #E74C3C; }
+
+  /* 印刷プレビュー */
+  .print-preview {
+    background: white;
+    border: 2px solid #BDC3C7;
+    border-radius: 8px;
+    padding: 24px;
+    margin: 16px 0;
+  }
+  .print-summary {
+    background: #F4F6F7;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  .print-summary h3 { color: #2C3E50; margin-bottom: 12px; }
+  .check-item { padding: 4px 0; font-size: 14px; }
+
+  /* 休みスタッフ行 */
+  .schedule .off-row-cell {
+    background: repeating-linear-gradient(45deg, #BDC3C7 0, #BDC3C7 8px, #95A5A6 8px, #95A5A6 16px);
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center !important;
+    height: 38px;
+    letter-spacing: 4px;
+  }
+  .schedule .off-row-cell.paid {
+    background: repeating-linear-gradient(45deg, #E91E63 0, #E91E63 8px, #C2185B 8px, #C2185B 16px);
+  }
+  .schedule .off-row-cell.wish {
+    background: repeating-linear-gradient(45deg, #FFC107 0, #FFC107 8px, #FFA000 8px, #FFA000 16px);
+    color: #2C3E50;
+  }
+  .schedule .off-row-cell.akeoff {
+    background: repeating-linear-gradient(45deg, #95A5A6 0, #95A5A6 8px, #7F8C8D 8px, #7F8C8D 16px);
+  }
+  .schedule .off-row-cell.night-only-time {
+    background: #2C3E50;
+    color: white;
+    font-size: 11px;
+  }
+
+  /* 勤務時間外セル */
+  .schedule td.outside-hours {
+    background: repeating-linear-gradient(135deg, #ECF0F1 0, #ECF0F1 6px, #D5DBDB 6px, #D5DBDB 8px) !important;
+    cursor: not-allowed;
+    color: #95A5A6;
+    font-size: 9px;
+  }
+  .schedule td.outside-hours::before {
+    content: "—";
+  }
+
+  .col-staff.off-staff {
+    background: #ECF0F1 !important;
+    color: #95A5A6 !important;
+  }
+
+  /* 印刷時 */
+  @media print {
+    .app-header, .stepper, .next-action, .actions, .ai-status, .legend, .view-tabs { display: none !important; }
+    body { background: white; }
+    .card { box-shadow: none; padding: 0; }
+    .schedule { font-size: 9px; }
+  }
+
+  /* 取込結果テーブル：行クリック可能 */
+  tr.warning, tr.error { cursor: pointer; transition: all 0.15s; }
+  tr.warning:hover, tr.error:hover {
+    transform: scale(1.005);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 1;
+  }
+  tr.warning td:last-child::after,
+  tr.error td:last-child::after {
+    content: '👆 クリックで対応';
+    margin-left: 8px;
+    font-size: 11px;
+    color: #4A90E2;
+    font-weight: bold;
+  }
+
+  /* ビュータブ（日/週/月切替） */
+  .view-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid #ECF0F1;
+    padding-bottom: 8px;
+  }
+  .view-tab {
+    background: #ECF0F1;
+    color: #666;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px 6px 0 0;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .view-tab:hover { background: #D5DBDB; }
+  .view-tab.active {
+    background: #4A90E2;
+    color: white;
+  }
+
+  /* 1週間表示 */
+  .weekly-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .weekly-table th, .weekly-table td {
+    border: 1px solid #BDC3C7;
+    padding: 8px;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .weekly-table thead th {
+    background: #2E5984;
+    color: white;
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+  .weekly-table thead th.day-sat { background: #3498DB; }
+  .weekly-table thead th.day-sun { background: #E74C3C; }
+  .weekly-table .col-staff-week {
+    width: 100px;
+    background: #F4F6F7 !important;
+    color: #2C3E50 !important;
+    text-align: left !important;
+    padding-left: 12px !important;
+    font-weight: bold;
+  }
+  .weekly-table .col-staff-week small {
+    display: block;
+    color: #888;
+    font-size: 10px;
+    font-weight: normal;
+  }
+  .weekly-cell {
+    cursor: pointer;
+    transition: all 0.15s;
+    min-height: 80px;
+    height: 80px;
+    padding: 6px !important;
+  }
+  .weekly-cell:hover {
+    background: #EBF5FB !important;
+  }
+  .weekly-cell .shift-time {
+    font-weight: bold;
+    font-size: 13px;
+    color: #2E5984;
+    margin-bottom: 4px;
+  }
+  .weekly-cell .task-count {
+    background: #4A90E2;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 8px;
+    display: inline-block;
+    font-size: 10px;
+    margin: 2px 1px;
+  }
+  .weekly-cell .task-count.bath { background: #F5A623; }
+  .weekly-cell .task-count.med { background: #BD10E0; }
+  .weekly-cell.off {
+    background: #ECECEC !important;
+    color: #999;
+  }
+  .weekly-cell.off::before { content: "休"; font-size: 18px; font-weight: bold; }
+  .weekly-cell.night {
+    background: #2C3E50 !important;
+    color: white !important;
+  }
+  .weekly-cell.night-off {
+    background: #ECF0F1 !important;
+    color: #888;
+  }
+
+  /* ドラッグ&ドロップ */
+  .schedule td.has-task[draggable="true"] { cursor: move; }
+  .schedule td.dragging {
+    opacity: 0.4;
+    transform: scale(0.95);
+  }
+  .schedule td.drop-target {
+    box-shadow: inset 0 0 0 3px #27AE60 !important;
+    background: #D5F5E3 !important;
+  }
+  .schedule td.drop-target-invalid {
+    box-shadow: inset 0 0 0 3px #E74C3C !important;
+  }
+  .drag-instruction {
+    background: #EBF5FB;
+    border-left: 4px solid #4A90E2;
+    padding: 10px 14px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+
+  /* エラー対応モーダル */
+  .modal.large { max-width: 600px; }
+  .error-detail-section {
+    margin-bottom: 16px;
+    padding: 12px;
+    border-radius: 6px;
+  }
+  .error-detail-section.warning { background: #FEF9E7; border-left: 4px solid #F39C12; }
+  .error-detail-section.error { background: #FDEDEC; border-left: 4px solid #E74C3C; }
+  .error-detail-section h4 { margin-bottom: 8px; font-size: 14px; }
+  .error-options {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .error-option-btn {
+    padding: 12px 16px;
+    border: 2px solid #ECF0F1;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+  }
+  .error-option-btn:hover {
+    border-color: #4A90E2;
+    background: #EBF5FB;
+  }
+  .error-option-btn .opt-title {
+    font-weight: bold;
+    font-size: 14px;
+    color: #2E5984;
+  }
+  .error-option-btn .opt-desc {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+  }
+  .error-option-btn.recommended {
+    border-color: #27AE60;
+    background: #FAFEFB;
+  }
+  .error-option-btn.recommended .opt-title { color: #1E8449; }
+  .error-option-btn.recommended::after {
+    content: " ◎ 推奨";
+    color: #27AE60;
+    font-size: 11px;
+    font-weight: bold;
+  }
+  .manual-input-form {
+    background: #F4F6F7;
+    padding: 16px;
+    border-radius: 6px;
+    margin-top: 12px;
+  }
+  .manual-input-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: bold;
+  }
+  .manual-input-form input,
+  .manual-input-form select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #BDC3C7;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  /* スタッフシフト表 */
+  #staffShiftTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    table-layout: fixed;
+  }
+  #staffShiftTable th, #staffShiftTable td {
+    border: 1px solid #BDC3C7;
+    text-align: center;
+    padding: 0;
+    vertical-align: middle;
+  }
+  #staffShiftTable thead th {
+    background: #6C3483;
+    color: white;
+    padding: 8px 4px;
+    font-size: 11px;
+    font-weight: normal;
+  }
+  #staffShiftTable thead th.weekend { background: #2980B9; }
+  #staffShiftTable thead th.weekend.sun { background: #C0392B; }
+  #staffShiftTable .col-staff-shift {
+    width: 90px;
+    background: #F4ECF7 !important;
+    color: #2C3E50 !important;
+    text-align: left !important;
+    padding: 6px 8px !important;
+    font-weight: bold;
+  }
+  #staffShiftTable .col-staff-shift small {
+    display: block;
+    color: #888;
+    font-size: 9px;
+    font-weight: normal;
+  }
+  /* サマリー列ヘッダー（thead内） */
+  #staffShiftTable thead th.col-summary {
+    background: linear-gradient(135deg, #5B2C82, #4A1F6B) !important;
+    color: white !important;
+    font-weight: bold !important;
+    font-size: 13px !important;
+    padding: 8px 4px !important;
+    width: 56px;
+    border-left: 2px solid #FFC107 !important;
+  }
+  #staffShiftTable thead th.col-summary:not(:first-of-type) {
+    border-left: 1px solid #BDC3C7 !important;
+  }
+  /* サマリー列セル（tbody内） */
+  #staffShiftTable tbody td.col-summary {
+    width: 56px;
+    background: #F8F4FB !important;
+    font-size: 16px !important;
+    font-weight: bold;
+    padding: 6px 4px !important;
+    color: #2C3E50;
+    border-left: 2px solid #FFC107 !important;
+  }
+  #staffShiftTable tbody td.col-summary:not(:first-of-type) {
+    border-left: 1px solid #BDC3C7 !important;
+  }
+  /* 夜勤数のハイライト */
+  #staffShiftTable tbody td.col-summary.summary-night {
+    color: #2C3E50;
+  }
+  #staffShiftTable tbody td.col-summary.summary-night.has-night {
+    background: #ECEFF7 !important;
+    color: #2C3E50;
+  }
+  /* 値が0のときは薄く */
+  #staffShiftTable tbody td.col-summary.zero-value {
+    color: #95A5A6;
+    font-weight: normal;
+  }
+  .shift-cell {
+    height: 36px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: white;
+    font-weight: bold;
+    font-size: 11px;
+  }
+  .shift-cell:hover { transform: scale(1.05); z-index: 5; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .shift-cell.early { background: #27AE60; }
+  .shift-cell.day { background: #4A90E2; }
+  .shift-cell.late { background: #F39C12; }
+  .shift-cell.night { background: #2C3E50; }
+  .shift-cell.akeoff { background: #95A5A6; }
+  .shift-cell.off { background: #BDC3C7; color: #555; }
+  .shift-cell.paid { background: #E91E63; }
+  .shift-cell.wish { background: #FFC107; color: #333; }
+  .shift-cell.dragging-shift { opacity: 0.4; transform: scale(0.9); }
+  .shift-cell.shift-drop-target {
+    box-shadow: inset 0 0 0 3px #27AE60 !important;
+  }
+  .shift-cell .label {
+    font-size: 9px;
+    line-height: 1.2;
+  }
+  .shift-cell .wish-mark {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    font-size: 9px;
+    color: #E67E22;
+  }
+  .shift-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .shift-summary-card {
+    background: #F4F6F7;
+    padding: 12px;
+    border-radius: 6px;
+    text-align: center;
+  }
+  .shift-summary-card .num {
+    font-size: 24px;
+    font-weight: bold;
+    color: #6C3483;
+  }
+  .shift-summary-card .label {
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+  }
+  .shift-check-item {
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .shift-check-item.ok { background: #D5F5E3; color: #1E8449; }
+  .shift-check-item.warn { background: #FEF9E7; color: #D68910; }
+  .shift-check-item.error { background: #FDEDEC; color: #C0392B; }
+</style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<div class="app-header">
+  <div>
+    <h1>📋 シルキー シフト作成システム</h1>
+  </div>
+  <div class="user-info">
+    👤 上村さん | 2026年5月10日（金） | 🚪 ログアウト
+  </div>
+</div>
+
+<!-- ステップインジケーター -->
+<div class="stepper">
+  <div class="step-pill active" data-step="1">
+    <span class="num">1</span>
+    <span>PDFを取り込む</span>
+  </div>
+  <span class="arrow">→</span>
+  <div class="step-pill" data-step="2">
+    <span class="num">2</span>
+    <span>取込結果を確認</span>
+  </div>
+  <span class="arrow">→</span>
+  <div class="step-pill" data-step="3">
+    <span class="num">3</span>
+    <span>シフトを作る</span>
+  </div>
+  <span class="arrow">→</span>
+  <div class="step-pill" data-step="4">
+    <span class="num">4</span>
+    <span>確認・微調整</span>
+  </div>
+  <span class="arrow">→</span>
+  <div class="step-pill" data-step="5">
+    <span class="num">5</span>
+    <span>印刷する</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Step 1: PDFアップロード -->
+  <div class="step-content active" id="step1">
+    <div class="next-action">
+      <b>📍 STEP 1：</b>カイポケからダウンロードしたPDFファイルをここにドラッグ＆ドロップしてください
+    </div>
+
+    <div class="card">
+      <h2>📁 PDFを取り込む</h2>
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" multiple accept=".pdf,.zip">
+        <div class="icon">📁</div>
+        <h3>ここにPDFをドロップしてください</h3>
+        <p>ZIPファイル（複数PDF）／単独PDFファイル どちらもOK</p>
+        <p style="margin-top:8px; font-size:13px; color:#888;">またはクリックしてファイルを選択</p>
+        <button class="btn" onclick="document.getElementById('fileInput').click()">📂 ファイルを選ぶ</button>
+        <p style="margin-top:24px; font-size:12px; color:#999;">
+          ※デモ版：実際のPDFをドロップすると自動で処理シミュレーションを実行します
+        </p>
+      </div>
+
+      <div style="margin-top:16px; padding:12px; background:#EBF5FB; border-radius:6px; font-size:13px;">
+        <strong style="color:#2E5984;">💡 ヒント：</strong>
+        実物のPDFがなくても、下のボタンで <strong>「サンプルPDF処理」</strong> をシミュレーションできます。
+      </div>
+      <div style="text-align:center; margin-top:12px;">
+        <button class="btn-secondary" onclick="startProcessing(true)" style="padding:10px 24px; font-size:14px;">
+          🎬 サンプル48名分でデモを開始
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 1 -> Processing -->
+  <div class="step-content" id="processing">
+    <div class="card">
+      <h2>⏳ PDFを読み取っています...</h2>
+      <div class="processing">
+        <div class="spinner"></div>
+        <h3 id="procTitle">48名分のPDFを処理中...</h3>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progFill">0%</div>
+        </div>
+        <div class="processing-log" id="procLog"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: 取込結果 -->
+  <div class="step-content" id="step2">
+    <div class="next-action">
+      <b>📍 STEP 2：</b>取込結果を確認してください。問題なければ「次へ」を押してシフト作成に進みます
+    </div>
+
+    <div class="card">
+      <h2>✅ 取込結果（48名分）</h2>
+
+      <div class="summary-cards">
+        <div class="sum-card success">
+          <div class="big" id="sumSuccess">0</div>
+          <div class="label">✅ 成功</div>
+        </div>
+        <div class="sum-card warning">
+          <div class="big" id="sumWarning">0</div>
+          <div class="label">⚠️ 確認必要</div>
+        </div>
+        <div class="sum-card error">
+          <div class="big" id="sumError">0</div>
+          <div class="label">❌ エラー</div>
+        </div>
+        <div class="sum-card">
+          <div class="big" id="sumTime">0s</div>
+          <div class="label">⏱ 処理時間</div>
+        </div>
+      </div>
+
+      <h3 style="margin:16px 0 8px;">処理結果一覧</h3>
+      <div style="max-height:400px; overflow-y:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th width="40">No</th>
+              <th>利用者</th>
+              <th width="80">介護度</th>
+              <th width="80">処理時間</th>
+              <th width="80">結果</th>
+              <th>備考</th>
+            </tr>
+          </thead>
+          <tbody id="resultTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-back" onclick="goToStep(1)">← 最初に戻る</button>
+      <button class="btn-primary" onclick="goToStep(3)">次へ：シフト作成 →</button>
+    </div>
+  </div>
+
+  <!-- Step 3: シフト作成 -->
+  <div class="step-content" id="step3">
+    <div class="next-action">
+      <b>📍 STEP 3：</b>緑のボタンを押すと、AIが30秒でシフト表を自動生成します
+    </div>
+
+    <div class="card" id="step3Initial">
+      <h2>🤖 シフトをAIで自動作成</h2>
+      <div style="text-align:center; padding:60px 20px;">
+        <div style="font-size:64px; margin-bottom:16px;">🤖</div>
+        <h3 style="font-size:22px; color:#2E5984; margin-bottom:24px;">
+          48名×14名のシフトを<br>AIが自動作成します
+        </h3>
+        <p style="font-size:14px; color:#666; margin-bottom:32px;">
+          ・ダブルブッキング自動回避<br>
+          ・勤務時間内に配置<br>
+          ・法定休憩を確保<br>
+          ・連続業務上限を考慮
+        </p>
+        <button class="btn-primary" onclick="generateShift()">🟢 今月のシフトを作る</button>
+      </div>
+    </div>
+
+    <div class="card" id="step3Generating" style="display:none;">
+      <h2>⚡ 生成中...</h2>
+      <div class="processing">
+        <div class="spinner"></div>
+        <h3 id="genTitle">AIがシフトを最適化しています...</h3>
+        <div class="processing-log" id="genLog"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4: 編集・確認 -->
+  <div class="step-content" id="step4">
+    <div class="next-action">
+      <b>📍 STEP 4：</b>必要なら微調整してください。問題なければ「印刷する」へ進みます
+    </div>
+
+    <div class="ai-status">
+      <span><strong>🤖 AI自動生成完了</strong></span>
+      <span class="badge">✅ ダブルブッキング 0件</span>
+      <span class="badge">✅ 勤務時間外 0件</span>
+      <span class="badge">✅ 法定休憩 全員確保</span>
+      <span class="badge warning">⚠️ 入浴 10:30に4名集中</span>
+    </div>
+
+    <div class="card" style="overflow-x:auto;">
+      <div class="view-tabs">
+        <button class="view-tab active" data-view="daily" onclick="switchView('daily')">📅 1日（サービス）</button>
+        <button class="view-tab" data-view="weekly" onclick="switchView('weekly')">📆 1週間（サービス）</button>
+        <button class="view-tab" data-view="monthly" onclick="switchView('monthly')">🗓 1ヶ月（サービス）</button>
+        <button class="view-tab" data-view="staffShift" onclick="switchView('staffShift')" style="margin-left:auto; background:#9B59B6; color:white;">👥 スタッフシフト調整</button>
+      </div>
+
+      <!-- 1日表示 -->
+      <div id="dailyView">
+        <h2>📅 5月10日（金）のシフト表</h2>
+        <div class="drag-instruction">
+          <strong>💡 操作方法：</strong>
+          ① セルにマウスを乗せる→<strong>配置の根拠</strong>を表示／
+          ② セルをクリック→<strong>担当者変更</strong>／
+          ③ <strong>セルをドラッグ＆ドロップ</strong>で他のスタッフに移動／
+          ④ 右クリック→<strong>ロック</strong>
+        </div>
+        <table class="schedule" id="scheduleTable"></table>
+
+        <div class="legend">
+          <strong>凡例：</strong>
+          <div class="legend-item"><div class="legend-color" style="background:#4A90E2"></div>身1（身体介護1）</div>
+          <div class="legend-item"><div class="legend-color" style="background:#2E5984"></div>身2（身体介護2）</div>
+          <div class="legend-item"><div class="legend-color" style="background:#7ED321"></div>身1生1</div>
+          <div class="legend-item"><div class="legend-color" style="background:#B8B8B8"></div>住宅</div>
+          <div class="legend-item"><div class="legend-color" style="background:#F5A623"></div>入浴</div>
+          <div class="legend-item"><div class="legend-color" style="background:#BD10E0"></div>配薬</div>
+          <div class="legend-item"><div class="legend-color" style="background:#9013FE"></div>巡回</div>
+          <div class="legend-item"><div class="legend-color" style="background:#2C3E50"></div>夜勤</div>
+        </div>
+      </div>
+
+      <!-- 1週間表示 -->
+      <div id="weeklyView" style="display:none;">
+        <h2>📆 5月11日（月）〜 5月17日（日）の週間シフト</h2>
+        <div class="drag-instruction">
+          <strong>💡 1週間表示：</strong>
+          スタッフ別の1週間の勤務時間と業務量を一目で確認できます。
+          セルをクリックすると、その日の詳細シフト（1日表示）に切り替わります。
+        </div>
+        <table class="weekly-table" id="weeklyTable"></table>
+      </div>
+
+      <!-- 1ヶ月表示 -->
+      <div id="monthlyView" style="display:none;">
+        <h2>🗓 2026年5月のシフトカレンダー</h2>
+        <div class="drag-instruction">
+          <strong>💡 1ヶ月表示：</strong>
+          1ヶ月の勤務状況を俯瞰できます。各日をクリックすると詳細を表示します。
+        </div>
+        <div id="monthlyCalendar"></div>
+      </div>
+
+      <!-- スタッフシフト調整 -->
+      <div id="staffShiftView" style="display:none;">
+        <h2>👥 スタッフ勤務シフト調整（2026年5月）</h2>
+        <div class="drag-instruction" style="background:#F4ECF7; border-left-color:#9B59B6;">
+          <strong>💡 スタッフシフト調整：</strong>
+          各スタッフの月間勤務シフト（早番/日勤/遅番/夜勤/休）を調整します。
+          <strong>セルをクリック→勤務種別変更</strong>／
+          <strong>ドラッグ＆ドロップ→他スタッフと交換</strong>／
+          <strong>右クリック→希望休をマーク</strong>
+        </div>
+
+        <!-- 凡例 -->
+        <div class="legend" style="background:#F4ECF7;">
+          <strong>勤務種別：</strong>
+          <div class="legend-item"><div class="legend-color" style="background:#27AE60"></div>早番（7-16）</div>
+          <div class="legend-item"><div class="legend-color" style="background:#4A90E2"></div>日勤（8-18）</div>
+          <div class="legend-item"><div class="legend-color" style="background:#F39C12"></div>遅番（10-19）</div>
+          <div class="legend-item"><div class="legend-color" style="background:#2C3E50"></div>夜勤（16-翌8）</div>
+          <div class="legend-item"><div class="legend-color" style="background:#95A5A6"></div>明け</div>
+          <div class="legend-item"><div class="legend-color" style="background:#BDC3C7"></div>休</div>
+          <div class="legend-item"><div class="legend-color" style="background:#E91E63"></div>有休</div>
+          <div class="legend-item"><div class="legend-color" style="background:#FFC107"></div>希望休</div>
+        </div>
+
+        <!-- スタッフシフト表 -->
+        <div style="overflow-x:auto;">
+          <table id="staffShiftTable"></table>
+        </div>
+
+        <!-- 集計サマリー -->
+        <div id="staffShiftSummary" style="margin-top:16px;"></div>
+
+        <!-- 充足チェック -->
+        <div id="staffShiftCheck" style="margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-back" onclick="goToStep(3)">← 作り直す</button>
+      <button class="btn-warning" onclick="undoLast()">↶ やり直し</button>
+      <button class="btn-warning" onclick="showAlternative()">🔄 別の案を見る</button>
+      <button class="btn-secondary" onclick="goToStep(5)">印刷へ進む →</button>
+    </div>
+  </div>
+
+  <!-- Step 5: 印刷 -->
+  <div class="step-content" id="step5">
+    <div class="next-action">
+      <b>📍 STEP 5：</b>最終確認の上、印刷してください
+    </div>
+
+    <div class="card">
+      <h2>🖨️ 印刷前の最終確認</h2>
+
+      <div class="print-summary">
+        <h3>📋 必須チェック</h3>
+        <div class="check-item" style="color:#1E8449;">✅ ダブルブッキング：0件</div>
+        <div class="check-item" style="color:#1E8449;">✅ 勤務時間外配置：0件</div>
+        <div class="check-item" style="color:#1E8449;">✅ 法定休憩：全員確保</div>
+        <div class="check-item" style="color:#1E8449;">✅ 入浴4回連続違反：0件</div>
+      </div>
+
+      <div class="print-summary" style="background:#FEF9E7;">
+        <h3 style="color:#D68910;">⚠️ 注意事項</h3>
+        <div class="check-item">⚠️ 入浴介助が10:30に4名集中</div>
+        <div class="check-item">⚠️ 上村さんの稼働が他より20%多い</div>
+      </div>
+
+      <div class="print-summary" style="background:#EBF5FB;">
+        <h3 style="color:#2E5984;">📊 先月との変化</h3>
+        <div class="check-item">📊 12箇所の配置が先月と変わりました</div>
+        <a href="#" style="color:#4A90E2; font-size:13px;">[変更箇所を見る]</a>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-back" onclick="goToStep(4)">← 編集に戻る</button>
+      <button class="btn-warning" onclick="showAlternative()">作り直す</button>
+      <button class="btn-primary" onclick="printNow()">🖨️ A3カラーで印刷</button>
+    </div>
+
+    <div class="card" id="successMessage" style="display:none; background:linear-gradient(135deg,#27AE60,#1E8449); color:white;">
+      <h2 style="color:white;">🎉 印刷を開始しました！</h2>
+      <p style="margin-top:8px;">5月のシフト表（A3カラー）を印刷しています。</p>
+      <p style="margin-top:16px; font-size:14px; opacity:0.9;">
+        所要時間：約20分（PDF取込から印刷まで）<br>
+        従来：1〜2日 → 30倍の時短達成
+      </p>
+      <div style="margin-top:24px;">
+        <button class="btn-secondary" onclick="resetApp()" style="background:white; color:#1E8449;">
+          🔄 もう一度デモを実行
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 編集モーダル -->
+<div class="modal-overlay" id="cellModal" onclick="closeCellModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2 id="modalTitle">セル編集</h2>
+    <div class="reasoning">
+      <strong>💡 配置の根拠</strong>
+      <ul id="modalReasoning" style="margin-top:8px; padding-left:20px;"></ul>
+    </div>
+    <div>
+      <strong>担当を変える：</strong>
+      <div class="options" id="modalOptions"></div>
+    </div>
+    <div class="actions">
+      <button class="btn-warning" onclick="lockCell()">🔒 ロック</button>
+      <button class="btn-back" onclick="closeCellModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- エラー・警告対応モーダル -->
+<div class="modal-overlay" id="errorModal" onclick="closeErrorModal(event)">
+  <div class="modal large" onclick="event.stopPropagation()">
+    <h2 id="errorModalTitle">取込結果の対応</h2>
+    <div id="errorModalBody"></div>
+    <div class="actions">
+      <button class="btn-back" onclick="closeErrorModal()">後で対応する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 勤務種別変更モーダル -->
+<div class="modal-overlay" id="shiftTypeModal" onclick="closeShiftTypeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2 id="shiftTypeModalTitle">勤務種別を変更</h2>
+    <p style="font-size:13px; color:#666; margin-bottom:12px;" id="shiftTypeModalDesc"></p>
+    <div class="options" id="shiftTypeOptions"></div>
+    <div class="actions">
+      <button class="btn-back" onclick="closeShiftTypeModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- 手動入力モーダル -->
+<div class="modal-overlay" id="manualModal" onclick="closeManualModal(event)">
+  <div class="modal large" onclick="event.stopPropagation()">
+    <h2>✏️ 手動でデータを入力</h2>
+    <p style="font-size:13px; color:#666; margin-bottom:12px;">
+      PDFから自動抽出できなかった分を、手入力で補完します。
+    </p>
+    <div class="manual-input-form">
+      <label>利用者氏名 <input type="text" id="manualName" value=""></label>
+      <label>要介護度
+        <select id="manualKaigodo">
+          <option>要介護1</option><option>要介護2</option><option>要介護3</option>
+          <option selected>要介護4</option><option>要介護5</option>
+        </select>
+      </label>
+      <label>主なサービス時間帯
+        <select id="manualTime">
+          <option>朝（7-10時）</option>
+          <option selected>午前（9-12時）</option>
+          <option>午後（13-17時）</option>
+          <option>夕方（17-19時）</option>
+        </select>
+      </label>
+      <label>備考（任意）<input type="text" id="manualMemo" placeholder="例：先月と同じ内容"></label>
+    </div>
+    <div class="actions">
+      <button class="btn-back" onclick="closeManualModal()">キャンセル</button>
+      <button class="btn-primary" onclick="saveManualInput()" style="padding:10px 20px;font-size:14px;">✅ 保存して反映</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────
+// データ
+// ─────────────────────────────────────
+const TIME_SLOTS = [];
+for (let h = 7; h < 19; h++) {
+  for (let m = 0; m < 60; m += 30) {
+    if (h === 18 && m === 30) TIME_SLOTS.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+    else if (h < 19) TIME_SLOTS.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+  }
+}
+
+const STAFF = [
+  { id: 's01', name: '上村', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's02', name: '原',   type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's03', name: '脇田', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's04', name: '田中', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's05', name: '柳田', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's06', name: '石井', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's07', name: '村川', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's08', name: '布田川','type': 'パート', shift: '日勤', time: '9-15' },
+  { id: 's09', name: '河田', type: 'パート', shift: '日勤', time: '9-15' },
+  { id: 's10', name: '黒田', type: '常勤', shift: '夜勤', time: '16-翌8' },
+  { id: 's11', name: '中小路','type': '常勤', shift: '夜勤明け', time: '休' },
+  { id: 's12', name: '出納', type: '常勤', shift: '休', time: '休' },
+  { id: 's13', name: '石坂', type: '常勤', shift: '日勤', time: '8-18' },
+  { id: 's14', name: '安部', type: 'パート','shift': '日勤', time: '9-15' },
+];
+
+const COLORS = {
+  visit: '#4A90E2', visit2: '#2E5984', visit_l: '#7ED321',
+  home: '#B8B8B8', bath: '#F5A623', med: '#BD10E0',
+  patrol: '#9013FE', guide: '#D8D8D8', night: '#2C3E50', rest: '#FFF',
+};
+
+const MOCK_USERS = [
+  '金子君子','藤本房江','最上百合子','田代義光','森本正人','森光子','門田見斐子','服部明美',
+  '清永好美','柴田久','土山てるみ','神山ヤエコ','平井健一','福島紀美子','原田フジノ','中根君子',
+  '橋本タツミ','林在椿','村上リヨ子','庵知子','高松エイ子','奈須静枝','田中津代','西垣國子',
+  '橋本せい子','三島弘明','渡邊正三','新貝節子','渡辺ナミエ','徳永史郎','東タカ子','今井千嘉子',
+  '冷水美喜子','村上妙子','梅本様','本村唱','太田昌子','津田睦朗','野木秀之','濵岡ツユ',
+  '赤木重和','廣瀬トシ子','栗山洋子','三糸一弘','肥田浩市','辻ゆう','酒井浩代','酒井教雄'
+];
+
+// 状態管理
+let schedule = {};
+let history = [];
+let lockedCells = new Set();
+let modifiedCells = new Set();
+let selectedCell = null;
+let processedResults = [];
+
+// ─────────────────────────────────────
+// ステップ管理
+// ─────────────────────────────────────
+function goToStep(step) {
+  document.querySelectorAll('.step-content').forEach(s => s.classList.remove('active'));
+  document.getElementById(`step${step}`).classList.add('active');
+
+  document.querySelectorAll('.step-pill').forEach(p => {
+    const n = parseInt(p.dataset.step);
+    p.classList.remove('active', 'done');
+    if (n < step) p.classList.add('done');
+    if (n === step) p.classList.add('active');
+  });
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─────────────────────────────────────
+// Step 1: ファイルドロップ
+// ─────────────────────────────────────
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length > 0) {
+    showToast(`✅ ${e.dataTransfer.files.length}個のファイルを受け取りました`, 'success');
+    startProcessing(false);
+  }
+});
+dropZone.addEventListener('click', e => {
+  if (e.target.tagName !== 'BUTTON') fileInput.click();
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files.length > 0) {
+    showToast(`✅ ${e.target.files.length}個のファイルを選択しました`, 'success');
+    startProcessing(false);
+  }
+});
+
+// ─────────────────────────────────────
+// Step 1: 処理開始
+// ─────────────────────────────────────
+function startProcessing(isSample) {
+  document.getElementById('step1').classList.remove('active');
+  document.getElementById('processing').classList.add('active');
+
+  const log = document.getElementById('procLog');
+  const fill = document.getElementById('progFill');
+  log.innerHTML = '';
+  fill.style.width = '0%';
+
+  processedResults = [];
+  let i = 0;
+
+  const interval = setInterval(() => {
+    if (i >= MOCK_USERS.length) {
+      clearInterval(interval);
+      setTimeout(() => {
+        document.getElementById('processing').classList.remove('active');
+        showResults();
+      }, 500);
+      return;
+    }
+
+    const user = MOCK_USERS[i];
+    let status = '✅', note = '正常に抽出完了';
+    if (i === 11 || i === 27) { status = '⚠️'; note = '前月と要介護度が違う'; }
+    if (i === 34) { status = '❌'; note = 'PDFが破損'; }
+
+    processedResults.push({
+      no: i + 1,
+      user,
+      kaigodo: Math.floor(Math.random() * 5) + 1,
+      time: Math.floor(Math.random() * 200) + 100,
+      status, note
+    });
+
+    log.innerHTML = `<div>[${String(i+1).padStart(2,'0')}/48] ${status} ${user}様 - ${note}</div>` + log.innerHTML;
+    fill.style.width = `${((i+1) / MOCK_USERS.length) * 100}%`;
+    fill.textContent = `${Math.round(((i+1) / MOCK_USERS.length) * 100)}%`;
+
+    i++;
+  }, 200);
+}
+
+// ─────────────────────────────────────
+// Step 2: 結果表示
+// ─────────────────────────────────────
+function showResults() {
+  goToStep(2);
+
+  const success = processedResults.filter(r => r.status === '✅').length;
+  const warning = processedResults.filter(r => r.status === '⚠️').length;
+  const error = processedResults.filter(r => r.status === '❌').length;
+
+  document.getElementById('sumSuccess').textContent = success;
+  document.getElementById('sumWarning').textContent = warning;
+  document.getElementById('sumError').textContent = error;
+  document.getElementById('sumTime').textContent = '15s';
+
+  const tbody = document.getElementById('resultTable');
+  tbody.innerHTML = processedResults.map(r => {
+    const cls = r.status === '✅' ? 'success' : (r.status === '⚠️' ? 'warning' : 'error');
+    const clickAttr = (r.status !== '✅') ? `onclick="openErrorModal(${r.no - 1})"` : '';
+    return `<tr class="${cls}" ${clickAttr}>
+      <td>${r.no}</td>
+      <td>${r.user}様</td>
+      <td>要介護${r.kaigodo}</td>
+      <td>${r.time}ms</td>
+      <td><strong>${r.status}</strong></td>
+      <td>${r.note}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────
+// エラー・警告対応モーダル
+// ─────────────────────────────────────
+let currentErrorIndex = null;
+
+function openErrorModal(idx) {
+  const r = processedResults[idx];
+  if (!r || r.status === '✅') return;
+  currentErrorIndex = idx;
+
+  const isError = r.status === '❌';
+  const sectionClass = isError ? 'error' : 'warning';
+  const icon = isError ? '❌' : '⚠️';
+
+  let detailHtml = '';
+  if (isError) {
+    detailHtml = `
+      <div class="error-detail-section error">
+        <h4>${icon} 何が起きたか</h4>
+        <div style="font-size:13px; line-height:1.7;">
+          <strong>${r.user}様</strong>のPDFファイルを正常に読み取れませんでした。<br>
+          原因の可能性：
+          <ul style="margin:6px 0 0 24px;">
+            <li>PDFファイルが破損している</li>
+            <li>スキャンPDF（画像）でテキストが含まれていない</li>
+            <li>古いフォーマットで構造が異なる</li>
+          </ul>
+        </div>
+      </div>
+      <h4 style="margin:14px 0 6px;">対応方法を選んでください：</h4>
+      <div class="error-options">
+        <button class="error-option-btn recommended" onclick="errorAction('reupload')">
+          <div class="opt-title">🔄 ① 別のPDFで再アップロード</div>
+          <div class="opt-desc">ケアマネに正常なPDFを再送依頼。届いたら再取込します。</div>
+        </button>
+        <button class="error-option-btn" onclick="errorAction('manual')">
+          <div class="opt-title">✏️ ② 手動でデータを入力</div>
+          <div class="opt-desc">PDFが読めない場合、必要な情報を手入力します（5分程度）。</div>
+        </button>
+        <button class="error-option-btn" onclick="errorAction('previous')">
+          <div class="opt-title">📋 ③ 前月と同じ内容で進める</div>
+          <div class="opt-desc">先月のデータをコピーして暫定的に運用します。</div>
+        </button>
+        <button class="error-option-btn" onclick="errorAction('skip')">
+          <div class="opt-title">⏭ ④ 一旦スキップ（後で対応）</div>
+          <div class="opt-desc">この方を一時的にシフト対象から外し、後で対応します。</div>
+        </button>
+      </div>
+    `;
+  } else {
+    detailHtml = `
+      <div class="error-detail-section warning">
+        <h4>${icon} 何を確認するか</h4>
+        <div style="font-size:13px; line-height:1.7;">
+          <strong>${r.user}様</strong>の提供票で、<strong>前月と異なる点</strong>が検出されました。<br>
+          <div style="margin-top:8px; padding:8px; background:white; border-radius:4px;">
+            📊 <strong>変更点：</strong> 要介護度が前月（要介護${Math.max(1, r.kaigodo - 1)}）→ 今月（要介護${r.kaigodo}）に変更
+          </div>
+          <div style="margin-top:8px; font-size:12px; color:#666;">
+            ※ ケアマネが正しく更新したか確認することをお勧めします。
+          </div>
+        </div>
+      </div>
+      <h4 style="margin:14px 0 6px;">対応方法を選んでください：</h4>
+      <div class="error-options">
+        <button class="error-option-btn recommended" onclick="errorAction('confirm')">
+          <div class="opt-title">✅ ① 確認OK、このまま反映</div>
+          <div class="opt-desc">変更が正しいので、新しい内容で進めます。</div>
+        </button>
+        <button class="error-option-btn" onclick="errorAction('check')">
+          <div class="opt-title">📞 ② ケアマネに確認</div>
+          <div class="opt-desc">念のためケアマネに確認してから反映します。一旦保留。</div>
+        </button>
+        <button class="error-option-btn" onclick="errorAction('keepOld')">
+          <div class="opt-title">🔙 ③ 前月の内容のまま進める</div>
+          <div class="opt-desc">変更が誤りの可能性があるので、先月通りで進めます。</div>
+        </button>
+      </div>
+    `;
+  }
+
+  document.getElementById('errorModalTitle').textContent = `${icon} ${r.user}様 — 対応方法を選択`;
+  document.getElementById('errorModalBody').innerHTML = detailHtml;
+  document.getElementById('errorModal').classList.add('active');
+}
+
+function closeErrorModal(e) {
+  if (e && e.target.id !== 'errorModal') return;
+  document.getElementById('errorModal').classList.remove('active');
+  currentErrorIndex = null;
+}
+
+function errorAction(action) {
+  const r = processedResults[currentErrorIndex];
+  if (!r) return;
+
+  if (action === 'manual') {
+    document.getElementById('manualName').value = r.user;
+    closeErrorModal();
+    document.getElementById('manualModal').classList.add('active');
+    return;
+  }
+
+  let newStatus = '✅', newNote = '';
+  switch(action) {
+    case 'reupload':  newStatus = '⏳'; newNote = '再アップロード待ち'; break;
+    case 'previous':  newStatus = '✅'; newNote = '前月コピーで暫定運用'; break;
+    case 'skip':      newStatus = '⏭'; newNote = 'シフト対象外（後で対応）'; break;
+    case 'confirm':   newStatus = '✅'; newNote = '確認OK・新規内容で反映'; break;
+    case 'check':     newStatus = '⏳'; newNote = 'ケアマネ確認中'; break;
+    case 'keepOld':   newStatus = '✅'; newNote = '前月内容のまま運用'; break;
+  }
+
+  r.status = newStatus;
+  r.note = newNote;
+  closeErrorModal();
+  showResults();
+  showToast(`✅ ${r.user}様の対応：「${newNote}」`, 'success');
+}
+
+function closeManualModal(e) {
+  if (e && e.target.id !== 'manualModal') return;
+  document.getElementById('manualModal').classList.remove('active');
+}
+
+function saveManualInput() {
+  const r = processedResults[currentErrorIndex];
+  if (!r) return;
+  const name = document.getElementById('manualName').value;
+  r.status = '✅';
+  r.note = `手動入力で補完（${name}様）`;
+  closeManualModal();
+  showResults();
+  showToast(`✅ 手動入力を保存しました`, 'success');
+}
+
+// ─────────────────────────────────────
+// Step 3: シフト生成
+// ─────────────────────────────────────
+function generateShift() {
+  document.getElementById('step3Initial').style.display = 'none';
+  document.getElementById('step3Generating').style.display = 'block';
+
+  const log = document.getElementById('genLog');
+  log.innerHTML = '';
+
+  const messages = [
+    '⚙️ スタッフの勤務時間を読込中...',
+    '📋 提供票データを解析中...',
+    '🔍 ダブルブッキングをチェック中...',
+    '🧮 業務量平準化を計算中...',
+    '🛁 入浴介助の連続上限を確認中...',
+    '🌙 夜勤メンバーの配置を最適化中...',
+    '✨ 複数案の中から最適案を選定中...',
+    '✅ シフト生成完了！',
+  ];
+
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i >= messages.length) {
+      clearInterval(interval);
+      setTimeout(() => {
+        initSchedule();
+        goToStep(4);
+        renderSchedule();
+        showToast('✅ シフトの生成が完了しました', 'success');
+        document.getElementById('step3Initial').style.display = 'block';
+        document.getElementById('step3Generating').style.display = 'none';
+      }, 500);
+      return;
+    }
+    log.innerHTML += `<div>${messages[i]}</div>`;
+    log.scrollTop = log.scrollHeight;
+    i++;
+  }, 400);
+}
+
+// ─────────────────────────────────────
+// Step 4: シフト表
+// ─────────────────────────────────────
+function initSchedule() {
+  schedule = {
+    's01': {'08:00':{user:'冷水',svc:'身1生1',color:COLORS.visit_l}, '08:30':{user:'冷水',svc:'身1生1',color:COLORS.visit_l},
+            '09:00':{user:'村上',svc:'身2',color:COLORS.visit2}, '09:30':{user:'村上',svc:'身2',color:COLORS.visit2},
+            '10:00':{user:'田代',svc:'入浴',color:COLORS.bath}, '10:30':{user:'田代',svc:'入浴',color:COLORS.bath},
+            '11:00':{user:'森',svc:'身1',color:COLORS.visit}, '11:30':{user:'冷水',svc:'身1',color:COLORS.visit},
+            '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true}, '12:30':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+            '13:00':{user:'冷水',svc:'身2',color:COLORS.visit2}, '13:30':{user:'冷水',svc:'身2',color:COLORS.visit2},
+            '14:00':{user:'誘導',svc:'食堂',color:COLORS.guide},
+            '15:00':{user:'配薬',svc:'配薬',color:COLORS.med},
+            '15:30':{user:'原田',svc:'入浴',color:COLORS.bath}, '16:00':{user:'原田',svc:'入浴',color:COLORS.bath},
+            '17:00':{user:'冷水',svc:'身1',color:COLORS.visit}},
+    's02': {'08:00':{user:'村上',svc:'身2',color:COLORS.visit2},'08:30':{user:'村上',svc:'身2',color:COLORS.visit2},
+            '09:00':{user:'誘導',svc:'食堂',color:COLORS.guide},
+            '10:00':{user:'藤本',svc:'入浴',color:COLORS.bath},'10:30':{user:'藤本',svc:'入浴',color:COLORS.bath},
+            '11:00':{user:'配薬',svc:'配薬',color:COLORS.med},'11:30':{user:'森本',svc:'身1',color:COLORS.visit},
+            '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},'12:30':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+            '13:00':{user:'高松',svc:'身1生1',color:COLORS.visit_l},'13:30':{user:'高松',svc:'身1生1',color:COLORS.visit_l},
+            '14:00':{user:'門田見',svc:'入浴',color:COLORS.bath},'14:30':{user:'門田見',svc:'入浴',color:COLORS.bath},
+            '15:00':{user:'清掃',svc:'住宅',color:COLORS.home},
+            '17:00':{user:'冷水',svc:'身1',color:COLORS.visit}},
+    's03': {'08:00':{user:'藤本',svc:'身1',color:COLORS.visit},'08:30':{user:'藤本',svc:'身1',color:COLORS.visit},
+            '09:00':{user:'田代',svc:'身1生1',color:COLORS.visit_l},'09:30':{user:'田代',svc:'身1生1',color:COLORS.visit_l},
+            '10:00':{user:'柴田',svc:'入浴',color:COLORS.bath},'10:30':{user:'柴田',svc:'入浴',color:COLORS.bath},
+            '11:00':{user:'巡回',svc:'巡回',color:COLORS.patrol},'11:30':{user:'巡回',svc:'巡回',color:COLORS.patrol},
+            '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},'12:30':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+            '13:00':{user:'神山',svc:'身2',color:COLORS.visit2},'13:30':{user:'神山',svc:'身2',color:COLORS.visit2},
+            '14:00':{user:'土山',svc:'身1',color:COLORS.visit},'15:00':{user:'配薬',svc:'配薬',color:COLORS.med},
+            '17:00':{user:'森',svc:'身1',color:COLORS.visit}},
+    's04': {'08:00':{user:'配薬',svc:'配薬',color:COLORS.med},'09:00':{user:'林',svc:'身1',color:COLORS.visit},
+            '10:00':{user:'原田',svc:'身1',color:COLORS.visit},'10:30':{user:'中根',svc:'身2',color:COLORS.visit2},
+            '11:00':{user:'中根',svc:'身2',color:COLORS.visit2},
+            '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},'12:30':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+            '13:00':{user:'清掃',svc:'住宅',color:COLORS.home},'14:00':{user:'津田',svc:'入浴',color:COLORS.bath},
+            '15:00':{user:'誘導',svc:'誘導',color:COLORS.guide},'17:00':{user:'徳永',svc:'身1',color:COLORS.visit}},
+    's05': {'09:00':{user:'渡邊',svc:'身1',color:COLORS.visit},'10:00':{user:'渡辺',svc:'入浴',color:COLORS.bath},
+            '10:30':{user:'渡辺',svc:'入浴',color:COLORS.bath},'11:00':{user:'配薬',svc:'配薬',color:COLORS.med},
+            '11:30':{user:'東',svc:'身1',color:COLORS.visit},
+            '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+            '13:00':{user:'今井',svc:'身2',color:COLORS.visit2},'13:30':{user:'今井',svc:'身2',color:COLORS.visit2},
+            '14:00':{user:'巡回',svc:'巡回',color:COLORS.patrol},'17:00':{user:'本村',svc:'身1',color:COLORS.visit}},
+    's06': {'08:00':{user:'誘導',svc:'食堂',color:COLORS.guide},'09:00':{user:'太田',svc:'身1',color:COLORS.visit},
+            '10:00':{user:'梅本',svc:'身1',color:COLORS.visit},'11:00':{user:'濵岡',svc:'身1',color:COLORS.visit},
+            '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+            '13:00':{user:'巡回',svc:'巡回',color:COLORS.patrol},'14:00':{user:'赤木',svc:'入浴',color:COLORS.bath},
+            '14:30':{user:'赤木',svc:'入浴',color:COLORS.bath},'17:00':{user:'奈須',svc:'身1',color:COLORS.visit}},
+    's07': {'08:00':{user:'配薬',svc:'配薬',color:COLORS.med},'09:00':{user:'橋本',svc:'身1',color:COLORS.visit},
+            '10:00':{user:'橋本',svc:'入浴',color:COLORS.bath},'11:00':{user:'三島',svc:'身1',color:COLORS.visit},
+            '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+            '13:00':{user:'誘導',svc:'誘導',color:COLORS.guide},'14:00':{user:'清掃',svc:'住宅',color:COLORS.home},
+            '17:00':{user:'新貝',svc:'身2',color:COLORS.visit2},'17:30':{user:'新貝',svc:'身2',color:COLORS.visit2}},
+    's08': {'09:00':{user:'誘導',svc:'誘導',color:COLORS.guide},'10:00':{user:'清水',svc:'身1',color:COLORS.visit},
+            '11:00':{user:'清水',svc:'入浴',color:COLORS.bath},
+            '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+            '13:00':{user:'住宅',svc:'住宅',color:COLORS.home},'14:00':{user:'住宅',svc:'住宅',color:COLORS.home}},
+    's09': {'09:00':{user:'誘導',svc:'誘導',color:COLORS.guide},'10:00':{user:'巡回',svc:'巡回',color:COLORS.patrol},
+            '11:00':{user:'住宅',svc:'住宅',color:COLORS.home},
+            '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+            '13:00':{user:'誘導',svc:'誘導',color:COLORS.guide},'14:00':{user:'住宅',svc:'住宅',color:COLORS.home}},
+    's10': {'16:00':{user:'夜勤',svc:'夜勤',color:COLORS.night},'16:30':{user:'夜勤',svc:'夜勤',color:COLORS.night},
+            '17:00':{user:'夜勤',svc:'夜勤',color:COLORS.night},'17:30':{user:'夜勤',svc:'夜勤',color:COLORS.night},
+            '18:00':{user:'夜勤',svc:'夜勤',color:COLORS.night},'18:30':{user:'夜勤',svc:'夜勤',color:COLORS.night}},
+    's13': {'09:00':{user:'辻',svc:'身1',color:COLORS.visit},'10:00':{user:'酒井',svc:'入浴',color:COLORS.bath},
+            '10:30':{user:'酒井',svc:'入浴',color:COLORS.bath},'11:00':{user:'配薬',svc:'配薬',color:COLORS.med},
+            '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+            '13:00':{user:'誘導',svc:'誘導',color:COLORS.guide},'14:00':{user:'巡回',svc:'巡回',color:COLORS.patrol},
+            '17:00':{user:'酒井',svc:'身1',color:COLORS.visit}},
+    's14': {'09:00':{user:'誘導',svc:'誘導',color:COLORS.guide},'10:00':{user:'住宅',svc:'住宅',color:COLORS.home},
+            '11:00':{user:'住宅',svc:'住宅',color:COLORS.home},
+            '12:00':{user:'休憩',svc:'休憩',color:'#FFF',isRest:true},
+            '13:00':{user:'住宅',svc:'住宅',color:COLORS.home},'14:00':{user:'住宅',svc:'住宅',color:COLORS.home}},
+  };
+  history = [];
+  modifiedCells.clear();
+  lockedCells.clear();
+
+  // スタッフシフトデータも初期化（5/10の状態を反映）
+  if (Object.keys(staffShiftData).length === 0) {
+    initStaffShiftData();
+  }
+}
+
+// ─────────────────────────────────────
+// スタッフの本日の勤務状態を判定
+// ─────────────────────────────────────
+function getStaffStatus(staff) {
+  // staffShiftDataがあれば5/10のステータスを使う
+  if (staffShiftData[staff.id] && staffShiftData[staff.id][9]) {
+    return staffShiftData[staff.id][9]; // index 9 = 5/10
+  }
+  // なければSTAFF.shift から推測
+  if (staff.shift === '休') return 'off';
+  if (staff.shift === '夜勤明け') return 'akeoff';
+  if (staff.shift === '夜勤') return 'night';
+  return 'day';
+}
+
+// 勤務時間（開始時刻・終了時刻）を取得
+function getWorkHours(staff) {
+  const status = getStaffStatus(staff);
+  if (status === 'night') return { start: '16:00', end: '23:59', wraparound: true };
+  if (staff.type === 'パート') return { start: '09:00', end: '15:00' };
+  return { start: '08:00', end: '18:00' };
+}
+
+function isInWorkHours(t, hours) {
+  if (hours.wraparound) return t >= hours.start;
+  return t >= hours.start && t < hours.end;
+}
+
+function renderSchedule() {
+  let html = '<thead><tr><th class="col-staff">スタッフ</th>' +
+    TIME_SLOTS.map(t => `<th>${t}</th>`).join('') + '</tr></thead><tbody>';
+
+  STAFF.forEach(staff => {
+    const status = getStaffStatus(staff);
+    const isOffDay = ['off', 'paid', 'wish', 'akeoff'].includes(status);
+
+    // 休みのスタッフは1行で「休」を表示
+    if (isOffDay) {
+      const labels = {
+        off: '休 み',
+        paid: '有 給 休 暇',
+        wish: '希 望 休',
+        akeoff: '夜 勤 明 け'
+      };
+      const cls = status === 'paid' ? 'paid' : (status === 'wish' ? 'wish' : (status === 'akeoff' ? 'akeoff' : ''));
+      html += `<tr>
+        <td class="col-staff off-staff">${staff.name}<small>${staff.type}<br>本日休み</small></td>
+        <td class="off-row-cell ${cls}" colspan="${TIME_SLOTS.length}">${labels[status] || '休'}</td>
+      </tr>`;
+      return;
+    }
+
+    const row = schedule[staff.id] || {};
+    const hours = getWorkHours(staff);
+
+    html += `<tr><td class="col-staff">${staff.name}<small>${staff.type}/${staff.shift}<br>${staff.time}</small></td>`;
+    TIME_SLOTS.forEach(t => {
+      const cell = row[t];
+      const cellKey = `${staff.id}_${t}`;
+      const isLocked = lockedCells.has(cellKey);
+      const isModified = modifiedCells.has(cellKey);
+      const modClass = isModified ? ' modified' : '';
+      const inHours = isInWorkHours(t, hours);
+
+      if (cell) {
+        const userColor = cell.isRest ? '#999' : 'white';
+        const draggable = cell.isRest ? '' : 'draggable="true"';
+        html += `<td class="has-task${modClass}" style="background:${cell.color};${cell.isRest?'border:1px dashed #999;':''}"
+                     ${draggable}
+                     data-staff="${staff.id}" data-time="${t}"
+                     ondragstart="onDragStart(event,'${staff.id}','${t}')"
+                     ondragover="onDragOver(event,'${staff.id}','${t}')"
+                     ondragleave="onDragLeave(event)"
+                     ondrop="onDrop(event,'${staff.id}','${t}')"
+                     ondragend="onDragEnd(event)"
+                     onclick="openCell('${staff.id}','${t}')"
+                     oncontextmenu="toggleLock(event,'${staff.id}','${t}')">
+                  <div class="cell-content">
+                    <div class="user" style="color:${userColor}">${cell.user}</div>
+                    <div class="svc" style="color:${userColor}">(${cell.svc})</div>
+                  </div>
+                  ${isLocked ? '<div class="lock-icon">🔒</div>' : ''}
+                </td>`;
+      } else if (!inHours) {
+        // 勤務時間外（パートの場合、9:00前と15:00以降）
+        html += `<td class="outside-hours" title="勤務時間外"></td>`;
+      } else {
+        html += `<td class="empty${modClass}"
+                     data-staff="${staff.id}" data-time="${t}"
+                     ondragover="onDragOver(event,'${staff.id}','${t}')"
+                     ondragleave="onDragLeave(event)"
+                     ondrop="onDrop(event,'${staff.id}','${t}')"></td>`;
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('scheduleTable').innerHTML = html;
+}
+
+// ─────────────────────────────────────
+// ドラッグ＆ドロップ
+// ─────────────────────────────────────
+let dragSource = null;
+
+function onDragStart(e, staffId, time) {
+  const key = `${staffId}_${time}`;
+  if (lockedCells.has(key)) {
+    e.preventDefault();
+    showToast('🔒 ロックされたセルは移動できません', 'warning');
+    return;
+  }
+  dragSource = { staffId, time };
+  e.target.closest('td').classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', JSON.stringify(dragSource));
+}
+
+function onDragOver(e, staffId, time) {
+  if (!dragSource) return;
+  if (dragSource.staffId === staffId && dragSource.time === time) return;
+  e.preventDefault();
+  const td = e.target.closest('td');
+  if (!td) return;
+
+  // 移動先が有効か判定
+  const targetCell = (schedule[staffId] || {})[time];
+  const sourceCell = schedule[dragSource.staffId][dragSource.time];
+
+  // ロック確認
+  const targetKey = `${staffId}_${time}`;
+  if (lockedCells.has(targetKey)) {
+    td.classList.add('drop-target-invalid');
+    return;
+  }
+
+  // 同じスタッフの別時間：移動として扱う
+  // 別スタッフ：交換 or 移動
+  td.classList.add('drop-target');
+  td.classList.remove('drop-target-invalid');
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function onDragLeave(e) {
+  const td = e.target.closest('td');
+  if (td) {
+    td.classList.remove('drop-target');
+    td.classList.remove('drop-target-invalid');
+  }
+}
+
+function onDrop(e, staffId, time) {
+  e.preventDefault();
+  if (!dragSource) return;
+  const td = e.target.closest('td');
+  if (td) {
+    td.classList.remove('drop-target');
+    td.classList.remove('drop-target-invalid');
+  }
+
+  if (dragSource.staffId === staffId && dragSource.time === time) {
+    dragSource = null;
+    return;
+  }
+
+  // ロック確認
+  const targetKey = `${staffId}_${time}`;
+  if (lockedCells.has(targetKey)) {
+    showToast('🔒 ロックされた配置には移動できません', 'warning');
+    dragSource = null;
+    return;
+  }
+
+  // 履歴保存
+  history.push({ snapshot: JSON.parse(JSON.stringify(schedule)) });
+
+  const sourceCell = schedule[dragSource.staffId][dragSource.time];
+  const targetCell = (schedule[staffId] || {})[time];
+
+  if (!schedule[staffId]) schedule[staffId] = {};
+
+  if (targetCell) {
+    // 入れ替え
+    schedule[staffId][time] = sourceCell;
+    schedule[dragSource.staffId][dragSource.time] = targetCell;
+    showToast(`🔄 ${sourceCell.user}様と${targetCell.user}様を入れ替えました`, 'success');
+  } else {
+    // 移動
+    schedule[staffId][time] = sourceCell;
+    delete schedule[dragSource.staffId][dragSource.time];
+    showToast(`✅ ${sourceCell.user}様を移動しました`, 'success');
+  }
+
+  modifiedCells.add(`${staffId}_${time}`);
+  modifiedCells.add(`${dragSource.staffId}_${dragSource.time}`);
+  dragSource = null;
+  renderSchedule();
+}
+
+function onDragEnd(e) {
+  const td = e.target.closest('td');
+  if (td) td.classList.remove('dragging');
+  document.querySelectorAll('.drop-target, .drop-target-invalid').forEach(el => {
+    el.classList.remove('drop-target');
+    el.classList.remove('drop-target-invalid');
+  });
+  dragSource = null;
+}
+
+// ─────────────────────────────────────
+// ビュー切替（日/週/月）
+// ─────────────────────────────────────
+function switchView(view) {
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.view-tab[data-view="${view}"]`).classList.add('active');
+
+  document.getElementById('dailyView').style.display = (view === 'daily') ? 'block' : 'none';
+  document.getElementById('weeklyView').style.display = (view === 'weekly') ? 'block' : 'none';
+  document.getElementById('monthlyView').style.display = (view === 'monthly') ? 'block' : 'none';
+  document.getElementById('staffShiftView').style.display = (view === 'staffShift') ? 'block' : 'none';
+
+  if (view === 'weekly') renderWeeklyView();
+  if (view === 'monthly') renderMonthlyView();
+  if (view === 'staffShift') renderStaffShift();
+}
+
+// ─────────────────────────────────────
+// スタッフシフト調整
+// ─────────────────────────────────────
+const SHIFT_TYPES = {
+  'early': { label: '早番', short: '早', desc: '7:00-16:00', color: '#27AE60' },
+  'day':   { label: '日勤', short: '日', desc: '8:00-18:00', color: '#4A90E2' },
+  'late':  { label: '遅番', short: '遅', desc: '10:00-19:00', color: '#F39C12' },
+  'night': { label: '夜勤', short: '夜', desc: '16:00-翌8:00', color: '#2C3E50' },
+  'akeoff':{ label: '明け', short: '明', desc: '夜勤明け', color: '#95A5A6' },
+  'off':   { label: '休', short: '休', desc: '休日', color: '#BDC3C7' },
+  'paid':  { label: '有休', short: '有', desc: '有給休暇', color: '#E91E63' },
+  'wish':  { label: '希望休', short: '希', desc: '希望休', color: '#FFC107' },
+};
+
+let staffShiftData = {};
+
+function initStaffShiftData() {
+  const daysInMonth = 31;
+  staffShiftData = {};
+  STAFF.forEach(staff => {
+    staffShiftData[staff.id] = [];
+    const isNightStaff = ['s10', 's11', 's12', 's13', 's14'].includes(staff.id);
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dayOfWeek = (3 + d - 1) % 7; // 5/1は金曜→ index=4？簡略化のため5/1=木曜とする
+      const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+
+      let shiftType;
+      if (staff.shift === '休' && d === 1) shiftType = 'off';
+      else if (staff.shift === '夜勤明け' && d === 1) shiftType = 'akeoff';
+      else if (staff.id === 's10') {
+        // 黒田夜勤メンバー：5日サイクル
+        const cycle = (d - 1) % 5;
+        shiftType = ['night', 'akeoff', 'off', 'day', 'day'][cycle];
+      } else if (staff.id === 's11') {
+        // 中小路夜勤メンバー
+        const cycle = (d + 1) % 5;
+        shiftType = ['night', 'akeoff', 'off', 'day', 'day'][cycle];
+      } else if (staff.id === 's12') {
+        // 出納夜勤メンバー
+        const cycle = (d + 2) % 5;
+        shiftType = ['night', 'akeoff', 'off', 'day', 'day'][cycle];
+      } else if (staff.type === 'パート') {
+        // パート：週5日勤務
+        if (dayOfWeek === 0 || dayOfWeek === 6) shiftType = 'off';
+        else shiftType = 'day';
+      } else {
+        // 常勤日勤
+        if ((d % 7 === 0) || (d % 7 === 6)) shiftType = 'off';
+        else if (d % 13 === 0) shiftType = 'paid';
+        else if (d === 23 && staff.id === 's03') shiftType = 'wish';
+        else if (d === 17 && staff.id === 's05') shiftType = 'wish';
+        else shiftType = 'day';
+      }
+      staffShiftData[staff.id].push(shiftType);
+    }
+  });
+
+  // 5/10（index 9）に休みを明示的に設定（デモ用）
+  staffShiftData['s11'][9] = 'akeoff'; // 中小路：夜勤明け
+  staffShiftData['s12'][9] = 'off';    // 出納：休
+  staffShiftData['s14'][9] = 'wish';   // 安部：希望休
+}
+
+function renderStaffShift() {
+  if (Object.keys(staffShiftData).length === 0) initStaffShiftData();
+
+  const daysInMonth = 31;
+  const month = 5, year = 2026;
+  const firstDayOfWeek = 4; // 5/1は金曜とする（簡略化）
+  const dayLabels = ['日','月','火','水','木','金','土'];
+
+  let html = '<thead><tr><th class="col-staff-shift">スタッフ</th>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dow = (firstDayOfWeek + d - 1) % 7;
+    const isWeekend = dow === 0 || dow === 6;
+    const cls = dow === 0 ? 'weekend sun' : (dow === 6 ? 'weekend' : '');
+    html += `<th class="${cls}" style="width:30px;">${d}<br><small>${dayLabels[dow]}</small></th>`;
+  }
+  html += '<th class="col-summary">日勤<br><small style="font-weight:normal;font-size:9px;opacity:0.85;">日数</small></th>';
+  html += '<th class="col-summary">夜勤<br><small style="font-weight:normal;font-size:9px;opacity:0.85;">回数</small></th>';
+  html += '<th class="col-summary">休<br><small style="font-weight:normal;font-size:9px;opacity:0.85;">日数</small></th>';
+  html += '</tr></thead><tbody>';
+
+  STAFF.forEach(staff => {
+    html += `<tr><td class="col-staff-shift">${staff.name}<small>${staff.type}</small></td>`;
+    const shifts = staffShiftData[staff.id];
+    let workCount = 0, nightCount = 0, offCount = 0;
+
+    shifts.forEach((shiftType, idx) => {
+      const t = SHIFT_TYPES[shiftType];
+      const day = idx + 1;
+      const dow = (firstDayOfWeek + idx) % 7;
+
+      if (['day','early','late'].includes(shiftType)) workCount++;
+      if (shiftType === 'night') nightCount++;
+      if (['off','paid','wish'].includes(shiftType)) offCount++;
+
+      html += `<td class="shift-cell ${shiftType}"
+                 draggable="true"
+                 data-staff="${staff.id}" data-day="${day}"
+                 ondragstart="onShiftDragStart(event,'${staff.id}',${day})"
+                 ondragover="onShiftDragOver(event,'${staff.id}',${day})"
+                 ondragleave="onShiftDragLeave(event)"
+                 ondrop="onShiftDrop(event,'${staff.id}',${day})"
+                 ondragend="onShiftDragEnd(event)"
+                 onclick="openShiftType('${staff.id}',${day})"
+                 oncontextmenu="markWishDay(event,'${staff.id}',${day})"
+                 title="${t.label}（${t.desc}）">${t.short}</td>`;
+    });
+
+    html += `<td class="col-summary ${workCount === 0 ? 'zero-value' : ''}">${workCount}</td>`;
+    html += `<td class="col-summary summary-night ${nightCount > 0 ? 'has-night' : 'zero-value'}">${nightCount}</td>`;
+    html += `<td class="col-summary ${offCount === 0 ? 'zero-value' : ''}">${offCount}</td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody>';
+  document.getElementById('staffShiftTable').innerHTML = html;
+
+  // サマリー
+  let totalWork = 0, totalNight = 0, totalOff = 0, totalWish = 0;
+  Object.values(staffShiftData).forEach(arr => {
+    arr.forEach(s => {
+      if (['day','early','late'].includes(s)) totalWork++;
+      if (s === 'night') totalNight++;
+      if (['off','paid'].includes(s)) totalOff++;
+      if (s === 'wish') totalWish++;
+    });
+  });
+
+  document.getElementById('staffShiftSummary').innerHTML = `
+    <h3 style="margin-bottom:8px; color:#6C3483;">📊 月次サマリー</h3>
+    <div class="shift-summary-grid">
+      <div class="shift-summary-card"><div class="num">${totalWork}</div><div class="label">総勤務日数</div></div>
+      <div class="shift-summary-card"><div class="num">${totalNight}</div><div class="label">夜勤回数</div></div>
+      <div class="shift-summary-card"><div class="num">${totalOff}</div><div class="label">休・有休</div></div>
+      <div class="shift-summary-card"><div class="num">${totalWish}</div><div class="label">希望休</div></div>
+    </div>
+  `;
+
+  // 充足チェック
+  renderStaffShiftCheck();
+}
+
+function renderStaffShiftCheck() {
+  const daysInMonth = 31;
+  let html = '<h3 style="margin-bottom:8px; color:#6C3483;">🔍 配置チェック</h3>';
+
+  // 夜勤の毎日1名チェック
+  let nightOK = true, nightDays = [];
+  for (let d = 0; d < daysInMonth; d++) {
+    let count = 0;
+    Object.values(staffShiftData).forEach(arr => {
+      if (arr[d] === 'night') count++;
+    });
+    if (count === 0) { nightOK = false; nightDays.push(d + 1); }
+  }
+  if (nightOK) {
+    html += `<div class="shift-check-item ok"><span>✅ 夜勤体制：毎日1名以上配置</span><span>OK</span></div>`;
+  } else {
+    html += `<div class="shift-check-item error"><span>❌ 夜勤未配置：${nightDays.join(',')}日</span><span>要対応</span></div>`;
+  }
+
+  // 日勤帯の最低人数チェック（簡略化：1日あたり日勤4名以上）
+  let dayOK = true, dayShortage = [];
+  for (let d = 0; d < daysInMonth; d++) {
+    let count = 0;
+    Object.values(staffShiftData).forEach(arr => {
+      if (['day','early','late'].includes(arr[d])) count++;
+    });
+    if (count < 4) { dayOK = false; dayShortage.push(d + 1); }
+  }
+  if (dayOK) {
+    html += `<div class="shift-check-item ok"><span>✅ 日勤帯：全日4名以上配置</span><span>OK</span></div>`;
+  } else {
+    html += `<div class="shift-check-item warn"><span>⚠️ 日勤不足：${dayShortage.slice(0,5).join(',')}日</span><span>要確認</span></div>`;
+  }
+
+  // 希望休の反映状況
+  let wishCount = 0;
+  Object.values(staffShiftData).forEach(arr => {
+    arr.forEach(s => { if (s === 'wish') wishCount++; });
+  });
+  html += `<div class="shift-check-item ok"><span>✅ 希望休：${wishCount}件すべて反映済み</span><span>OK</span></div>`;
+
+  // 個別スタッフの月勤務日数チェック（パートは週5日想定）
+  let workDayWarnings = [];
+  STAFF.forEach(staff => {
+    const arr = staffShiftData[staff.id];
+    if (!arr) return;
+    const work = arr.filter(s => ['day','early','late','night'].includes(s)).length;
+    if (staff.type === 'パート' && work > 23) {
+      workDayWarnings.push(`${staff.name}：${work}日`);
+    }
+  });
+  if (workDayWarnings.length === 0) {
+    html += `<div class="shift-check-item ok"><span>✅ 各スタッフの勤務日数：適正範囲内</span><span>OK</span></div>`;
+  } else {
+    html += `<div class="shift-check-item warn"><span>⚠️ 勤務日数オーバー：${workDayWarnings.join(' / ')}</span><span>要確認</span></div>`;
+  }
+
+  document.getElementById('staffShiftCheck').innerHTML = html;
+}
+
+let selectedShiftCell = null;
+
+function openShiftType(staffId, day) {
+  selectedShiftCell = { staffId, day };
+  const staff = STAFF.find(s => s.id === staffId);
+  const current = staffShiftData[staffId][day - 1];
+
+  document.getElementById('shiftTypeModalTitle').textContent =
+    `${staff.name}さん 5月${day}日 — 勤務種別変更`;
+  document.getElementById('shiftTypeModalDesc').innerHTML =
+    `現在：<strong style="color:${SHIFT_TYPES[current].color}">${SHIFT_TYPES[current].label}（${SHIFT_TYPES[current].desc}）</strong>`;
+
+  let opts = '';
+  Object.entries(SHIFT_TYPES).forEach(([key, t]) => {
+    const selected = (key === current) ? 'recommended' : '';
+    opts += `<div class="option ${selected}" onclick="changeShiftType('${key}')">
+      <div style="background:${t.color}; width:32px; height:32px; border-radius:4px; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">${t.short}</div>
+      <div>
+        <div><strong>${t.label}</strong></div>
+        <small style="color:#666;">${t.desc}</small>
+      </div>
+      ${selected ? '<span class="badge ok">現在</span>' : ''}
+    </div>`;
+  });
+  document.getElementById('shiftTypeOptions').innerHTML = opts;
+  document.getElementById('shiftTypeModal').classList.add('active');
+}
+
+function closeShiftTypeModal(e) {
+  if (e && e.target.id !== 'shiftTypeModal') return;
+  document.getElementById('shiftTypeModal').classList.remove('active');
+  selectedShiftCell = null;
+}
+
+function changeShiftType(newType) {
+  if (!selectedShiftCell) return;
+  const { staffId, day } = selectedShiftCell;
+  const staff = STAFF.find(s => s.id === staffId);
+  const oldType = staffShiftData[staffId][day - 1];
+  staffShiftData[staffId][day - 1] = newType;
+  closeShiftTypeModal();
+  renderStaffShift();
+  showToast(`✅ ${staff.name}さん 5/${day}：${SHIFT_TYPES[oldType].label} → ${SHIFT_TYPES[newType].label}`, 'success');
+}
+
+function markWishDay(e, staffId, day) {
+  e.preventDefault();
+  const current = staffShiftData[staffId][day - 1];
+  if (current === 'wish') {
+    staffShiftData[staffId][day - 1] = 'day';
+    showToast('🔓 希望休を解除しました', 'success');
+  } else {
+    staffShiftData[staffId][day - 1] = 'wish';
+    showToast('⭐ 希望休としてマークしました', 'success');
+  }
+  renderStaffShift();
+}
+
+// シフトドラッグ＆ドロップ
+let shiftDragSource = null;
+
+function onShiftDragStart(e, staffId, day) {
+  shiftDragSource = { staffId, day };
+  e.target.classList.add('dragging-shift');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onShiftDragOver(e, staffId, day) {
+  if (!shiftDragSource) return;
+  if (shiftDragSource.staffId === staffId && shiftDragSource.day === day) return;
+  e.preventDefault();
+  e.target.classList.add('shift-drop-target');
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function onShiftDragLeave(e) {
+  e.target.classList.remove('shift-drop-target');
+}
+
+function onShiftDrop(e, staffId, day) {
+  e.preventDefault();
+  if (!shiftDragSource) return;
+  e.target.classList.remove('shift-drop-target');
+
+  if (shiftDragSource.staffId === staffId && shiftDragSource.day === day) {
+    shiftDragSource = null;
+    return;
+  }
+
+  // 入れ替え
+  const sourceShift = staffShiftData[shiftDragSource.staffId][shiftDragSource.day - 1];
+  const targetShift = staffShiftData[staffId][day - 1];
+  staffShiftData[shiftDragSource.staffId][shiftDragSource.day - 1] = targetShift;
+  staffShiftData[staffId][day - 1] = sourceShift;
+
+  const sourceStaff = STAFF.find(s => s.id === shiftDragSource.staffId);
+  const targetStaff = STAFF.find(s => s.id === staffId);
+  showToast(`🔄 ${sourceStaff.name}さん⇔${targetStaff.name}さんのシフトを入れ替えました`, 'success');
+
+  shiftDragSource = null;
+  renderStaffShift();
+}
+
+function onShiftDragEnd(e) {
+  e.target.classList.remove('dragging-shift');
+  document.querySelectorAll('.shift-drop-target').forEach(el => {
+    el.classList.remove('shift-drop-target');
+  });
+  shiftDragSource = null;
+}
+
+// ─────────────────────────────────────
+// 1週間表示
+// ─────────────────────────────────────
+function renderWeeklyView() {
+  const days = [
+    { d: 11, w: '月', date: '5/11' },
+    { d: 12, w: '火', date: '5/12' },
+    { d: 13, w: '水', date: '5/13' },
+    { d: 14, w: '木', date: '5/14' },
+    { d: 15, w: '金', date: '5/15' },
+    { d: 16, w: '土', date: '5/16' },
+    { d: 17, w: '日', date: '5/17' },
+  ];
+
+  let html = '<thead><tr><th class="col-staff-week">スタッフ</th>';
+  days.forEach(d => {
+    const cls = d.w === '土' ? ' class="day-sat"' : (d.w === '日' ? ' class="day-sun"' : '');
+    html += `<th${cls}>${d.date}<br>(${d.w})</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  // ダミーの週間データ生成
+  STAFF.forEach(staff => {
+    html += `<tr><td class="col-staff-week">${staff.name}<small>${staff.type}<br>${staff.shift}</small></td>`;
+    days.forEach((d, idx) => {
+      const isWeekend = d.w === '土' || d.w === '日';
+
+      // 勤務形態に応じた表示
+      if (staff.shift === '休') {
+        html += `<td class="weekly-cell off"></td>`;
+      } else if (staff.shift === '夜勤明け') {
+        if (idx === 0 || idx === 3) {
+          html += `<td class="weekly-cell night-off">夜勤明け</td>`;
+        } else if (idx === 1 || idx === 4) {
+          html += `<td class="weekly-cell night">夜勤<br>16-翌8</td>`;
+        } else {
+          html += `<td class="weekly-cell off"></td>`;
+        }
+      } else if (staff.shift === '夜勤') {
+        if (idx === 0 || idx === 4) {
+          html += `<td class="weekly-cell night">夜勤<br>16-翌8</td>`;
+        } else if (idx === 1 || idx === 5) {
+          html += `<td class="weekly-cell night-off">夜勤明け</td>`;
+        } else {
+          html += `<td class="weekly-cell off"></td>`;
+        }
+      } else {
+        // 通常勤務
+        const isOff = (isWeekend && (staff.id === 's08' || staff.id === 's09' || staff.id === 's14'))
+                    || (idx === 2 && staff.id === 's07');
+        if (isOff) {
+          html += `<td class="weekly-cell off"></td>`;
+        } else {
+          const baseTasks = staff.type === 'パート' ? 5 : 9;
+          const tasks = baseTasks + (idx % 3) - 1;
+          const baths = Math.max(0, 2 + (idx % 2) - 1);
+          const meds = idx % 3 === 0 ? 2 : 1;
+          html += `<td class="weekly-cell" onclick="alert('${d.date}（${d.w}）${staff.name}さんの詳細シフトに切り替わります（デモ）')">
+            <div class="shift-time">${staff.time}</div>
+            <span class="task-count">業務${tasks}件</span>
+            ${baths > 0 ? `<span class="task-count bath">入浴${baths}</span>` : ''}
+            <span class="task-count med">配薬${meds}</span>
+          </td>`;
+        }
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('weeklyTable').innerHTML = html;
+}
+
+// ─────────────────────────────────────
+// 1ヶ月表示（簡易カレンダー）
+// ─────────────────────────────────────
+function renderMonthlyView() {
+  const month = 5, year = 2026;
+  const firstDay = new Date(year, month - 1, 1).getDay(); // 0=日
+  const daysInMonth = new Date(year, month, 0).getDate(); // 31日
+
+  let html = `<table class="weekly-table">
+    <thead><tr>
+      <th class="day-sun">日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="day-sat">土</th>
+    </tr></thead><tbody><tr>`;
+
+  // 空白セル
+  for (let i = 0; i < firstDay; i++) html += '<td></td>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dayOfWeek = (firstDay + d - 1) % 7;
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const totalShifts = 35 + Math.floor(Math.random() * 8);
+    const bathCount = 8 + Math.floor(Math.random() * 4);
+    const medCount = 12 + Math.floor(Math.random() * 4);
+
+    html += `<td class="weekly-cell" style="height:90px;" onclick="goBackToDailyForDay(${d})">
+      <div class="shift-time" style="${isWeekend ? 'color:' + (dayOfWeek === 0 ? '#E74C3C' : '#3498DB') : ''}">${d}日</div>
+      <span class="task-count" style="font-size:9px;">業務${totalShifts}</span>
+      <span class="task-count bath" style="font-size:9px;">入浴${bathCount}</span>
+      <span class="task-count med" style="font-size:9px;">配薬${medCount}</span>
+    </td>`;
+
+    if (dayOfWeek === 6 && d < daysInMonth) html += '</tr><tr>';
+  }
+  html += '</tr></tbody></table>';
+
+  document.getElementById('monthlyCalendar').innerHTML = html
+    + '<div style="margin-top:12px; padding:12px; background:#F4F6F7; border-radius:6px; font-size:13px;">'
+    + '<strong>📊 5月のサマリー：</strong>'
+    + '総業務件数 1,170件 / 入浴介助 248件 / 配薬 372件 / ダブルブッキング 0件 / 当日変更 12件'
+    + '</div>';
+}
+
+function goBackToDailyForDay(day) {
+  showToast(`📅 5/${day}の詳細シフトに切り替えます`, 'success');
+  switchView('daily');
+}
+
+function openCell(staffId, time) {
+  selectedCell = { staffId, time };
+  const staff = STAFF.find(s => s.id === staffId);
+  const cell = (schedule[staffId] || {})[time];
+  if (!cell) return;
+
+  document.getElementById('modalTitle').textContent = `${staff.name}さん × ${cell.user}様 ${time} (${cell.svc})`;
+  document.getElementById('modalReasoning').innerHTML = `
+    <li>✓ ${staff.name}さんの勤務時間内（${staff.time}）</li>
+    <li>✓ ${cell.user}様の希望時間に一致</li>
+    <li>✓ 連続業務OK（前後の業務との間隔OK）</li>
+    <li>✓ 先月と同じ担当者（継続配慮）</li>
+  `;
+
+  const options = STAFF.filter(s => s.id !== staffId && s.shift !== '休' && s.shift !== '夜勤明け');
+  const opts = options.slice(0, 5).map((s, i) => {
+    const isOK = !((schedule[s.id] || {})[time]);
+    const recommended = i === 0 && isOK ? 'recommended' : '';
+    const disabled = !isOK ? 'disabled' : '';
+    const badge = isOK ? (i === 0 ? 'ok">◎ おすすめ' : 'ok">○ 可') : 'disabled">✕ 既に他業務';
+    return `<div class="option ${recommended} ${disabled}" ${isOK ? `onclick="selectOption('${s.id}')"` : ''}>
+      <strong>${s.name}</strong><span style="color:#888;font-size:11px;">（${s.type}）</span>
+      <span class="badge ${badge}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('modalOptions').innerHTML = opts;
+  document.getElementById('cellModal').classList.add('active');
+}
+
+function selectOption(newStaffId) {
+  if (!selectedCell) return;
+  const { staffId, time } = selectedCell;
+  const cell = schedule[staffId][time];
+  history.push({ snapshot: JSON.parse(JSON.stringify(schedule)) });
+  if (!schedule[newStaffId]) schedule[newStaffId] = {};
+  schedule[newStaffId][time] = cell;
+  delete schedule[staffId][time];
+  modifiedCells.add(`${newStaffId}_${time}`);
+  closeCellModal();
+  renderSchedule();
+  showToast('✅ 担当を変更しました', 'success');
+}
+
+function lockCell() {
+  if (!selectedCell) return;
+  const key = `${selectedCell.staffId}_${selectedCell.time}`;
+  lockedCells.add(key);
+  closeCellModal();
+  renderSchedule();
+  showToast('🔒 配置をロックしました', 'success');
+}
+
+function toggleLock(e, staffId, time) {
+  e.preventDefault();
+  const key = `${staffId}_${time}`;
+  if (lockedCells.has(key)) { lockedCells.delete(key); showToast('🔓 解除しました'); }
+  else { lockedCells.add(key); showToast('🔒 ロックしました', 'success'); }
+  renderSchedule();
+}
+
+function closeCellModal(e) {
+  if (e && e.target.id !== 'cellModal') return;
+  document.getElementById('cellModal').classList.remove('active');
+  selectedCell = null;
+}
+
+function undoLast() {
+  if (history.length === 0) { showToast('⚠️ 戻せる操作がありません', 'warning'); return; }
+  const last = history.pop();
+  schedule = last.snapshot;
+  renderSchedule();
+  showToast('↶ 1つ前の状態に戻しました', 'success');
+}
+
+function showAlternative() {
+  showToast('🔄 別の案を生成しています...', 'success');
+  setTimeout(() => {
+    initSchedule();
+    renderSchedule();
+    showToast('💡 別パターンを表示しました', 'success');
+  }, 800);
+}
+
+// ─────────────────────────────────────
+// Step 5: 印刷
+// ─────────────────────────────────────
+function printNow() {
+  showToast('🖨️ 印刷ダイアログを開きます', 'success');
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      document.getElementById('successMessage').style.display = 'block';
+      goToStep(5);
+    }, 1000);
+  }, 500);
+}
+
+function resetApp() {
+  goToStep(1);
+  document.getElementById('successMessage').style.display = 'none';
+  processedResults = [];
+  schedule = {};
+  document.getElementById('procLog').innerHTML = '';
+  document.getElementById('progFill').style.width = '0%';
+}
+
+// ─────────────────────────────────────
+// トースト
+// ─────────────────────────────────────
+function showToast(msg, type = '') {
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
+}
+
+// 右クリックメニュー無効化
+document.addEventListener('contextmenu', e => {
+  if (e.target.closest('.schedule')) e.preventDefault();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>シルキー シフト自動化プロジェクト 1枚サマリー</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    color: #2C3E50;
+    background: white;
+    line-height: 1.5;
+    font-size: 11px;
+  }
+  .page {
+    width: 100%;
+    max-width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 12mm;
+    background: white;
+  }
+  .header {
+    text-align: center;
+    border-bottom: 3px solid #2E5984;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    color: #2E5984;
+    font-size: 22px;
+    margin-bottom: 4px;
+  }
+  .header .subtitle {
+    color: #666;
+    font-size: 12px;
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .section {
+    border: 2px solid #ECF0F1;
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .section h2 {
+    color: #2E5984;
+    font-size: 14px;
+    margin-bottom: 8px;
+    border-left: 4px solid #2E5984;
+    padding-left: 8px;
+  }
+  .section .item {
+    font-size: 11px;
+    margin-bottom: 4px;
+    padding-left: 16px;
+    position: relative;
+  }
+  .section .item::before {
+    content: "▸";
+    position: absolute;
+    left: 0;
+    color: #4A90E2;
+  }
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .compare-item {
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+  }
+  .compare-item.before {
+    background: #FDEDEC;
+    border: 2px solid #E74C3C;
+  }
+  .compare-item.after {
+    background: #D5F5E3;
+    border: 2px solid #27AE60;
+  }
+  .compare-item .label {
+    font-size: 10px;
+    font-weight: bold;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  .compare-item .value {
+    font-size: 22px;
+    font-weight: bold;
+  }
+  .compare-item.before .value { color: #C0392B; }
+  .compare-item.after .value { color: #1E8449; }
+  .compare-item .unit {
+    font-size: 11px;
+    color: #888;
+  }
+  .arrow {
+    text-align: center;
+    font-size: 24px;
+    margin: 4px 0;
+  }
+  .key-points {
+    background: linear-gradient(135deg, #4A90E2, #2E5984);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 12px 0;
+  }
+  .key-points h2 {
+    color: white;
+    border-left: 4px solid white;
+    margin-bottom: 6px;
+  }
+  .key-points .point {
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+  .cost-card {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 8px 0;
+  }
+  .cost-card .card {
+    background: #F4F6F7;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+    border: 1px solid #BDC3C7;
+  }
+  .cost-card .card .label {
+    font-size: 10px;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  .cost-card .card .value {
+    font-size: 16px;
+    font-weight: bold;
+    color: #2E5984;
+  }
+  .timeline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .timeline-item {
+    flex: 1;
+    text-align: center;
+    padding: 6px 4px;
+    background: #F4F6F7;
+    border-radius: 4px;
+    margin: 0 2px;
+    font-size: 10px;
+  }
+  .timeline-item.current {
+    background: #4A90E2;
+    color: white;
+    font-weight: bold;
+  }
+  .timeline-arrow {
+    color: #999;
+  }
+  .footer {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #ECF0F1;
+    text-align: center;
+    color: #999;
+    font-size: 9px;
+  }
+  .badge {
+    display: inline-block;
+    background: #27AE60;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    margin-right: 4px;
+  }
+  .danger {
+    color: #C0392B;
+    font-weight: bold;
+  }
+  .success {
+    color: #1E8449;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>📋 シルキー シフト作成 自動化プロジェクト</h1>
+    <div class="subtitle">業務目線・1枚サマリー（A4見開きで配布可）</div>
+  </div>
+
+  <!-- 課題と効果 -->
+  <div class="grid-2">
+    <div class="section" style="border-color:#E74C3C;background:#FDEDEC10;">
+      <h2 style="border-left-color:#E74C3C;">🔥 今の課題</h2>
+      <div class="item">月次シフト作成に <span class="danger">1〜2日</span>かかる</div>
+      <div class="item">ケアマネ約20事業所からPDFがバラバラ届く</div>
+      <div class="item">48名×14名のマッチングを手作業</div>
+      <div class="item">ダブルブッキング検出が目視頼み</div>
+      <div class="item">月途中の差し替えで毎回手戻り</div>
+    </div>
+
+    <div class="section" style="border-color:#27AE60;background:#D5F5E310;">
+      <h2 style="border-left-color:#27AE60;">✨ 解決後の世界</h2>
+      <div class="item">シフト作成が <span class="success">30分以内</span> で完成</div>
+      <div class="item">PDF取込はドラッグ＆ドロップだけ</div>
+      <div class="item">AIが自動でマッチング・複数案提示</div>
+      <div class="item">ダブルブッキングは自動チェック</div>
+      <div class="item">差し替えも影響範囲だけ自動再計算</div>
+    </div>
+  </div>
+
+  <!-- ビフォーアフター -->
+  <div class="section">
+    <h2>📊 担当者の月初業務（Before / After）</h2>
+    <div class="compare">
+      <div class="compare-item before">
+        <div class="label">⏱ 現在</div>
+        <div class="value">8〜16時間</div>
+        <div class="unit">（1〜2日）</div>
+      </div>
+      <div class="compare-item after">
+        <div class="label">⚡ システム導入後</div>
+        <div class="value">30分</div>
+        <div class="unit">（約30倍速）</div>
+      </div>
+    </div>
+    <div style="margin-top:8px;text-align:center;font-size:11px;color:#666;">
+      操作はボタン2つ：「<strong style="color:#27AE60;">今月のシフトを作る</strong>」→「<strong style="color:#4A90E2;">印刷する</strong>」
+    </div>
+  </div>
+
+  <!-- 重要ポイント -->
+  <div class="key-points">
+    <h2>🎯 このプロジェクトのポイント</h2>
+    <div class="point">① <strong>カイポケはそのまま使う</strong>（提供票・実績入力・国保連請求は継続）</div>
+    <div class="point">② <strong>シフト作成だけ</strong>を新システムが担当（住み分け明確）</div>
+    <div class="point">③ <strong>PCに苦手な方でも使える設計</strong>（ボタン2つ・専門用語なし）</div>
+    <div class="point">④ <strong>当日変更は紙のままでOK</strong>（現場の急変対応は変えない）</div>
+    <div class="point">⑤ <strong>失敗しても紙運用に戻せる</strong>（リスク最小化）</div>
+  </div>
+
+  <!-- コスト -->
+  <div class="section">
+    <h2>💰 費用</h2>
+    <div class="cost-card">
+      <div class="card">
+        <div class="label">初期費用</div>
+        <div class="value">0円</div>
+        <div style="font-size:9px;color:#888;">外注ゼロ・自社開発</div>
+      </div>
+      <div class="card">
+        <div class="label">月額費用</div>
+        <div class="value">5千〜1.5万円</div>
+        <div style="font-size:9px;color:#888;">AIツール代のみ</div>
+      </div>
+      <div class="card">
+        <div class="label">3年TCO</div>
+        <div class="value">約20〜55万円</div>
+        <div style="font-size:9px;color:#888;">従来開発の1/10以下</div>
+      </div>
+    </div>
+    <div style="margin-top:8px;font-size:10px;text-align:center;color:#666;">
+      <span class="badge">AI活用</span>Claude等のAIエージェントで開発・既存PC・既存Excel・既存カイポケを最大活用
+    </div>
+  </div>
+
+  <!-- スケジュール -->
+  <div class="section">
+    <h2>📅 スケジュール（6ヶ月計画）</h2>
+    <div class="timeline">
+      <div class="timeline-item current">
+        <strong>1ヶ月目</strong><br>準備・研修
+      </div>
+      <span class="timeline-arrow">→</span>
+      <div class="timeline-item">
+        <strong>2-3ヶ月目</strong><br>MVP開発
+      </div>
+      <span class="timeline-arrow">→</span>
+      <div class="timeline-item">
+        <strong>4-5ヶ月目</strong><br>並行運用
+      </div>
+      <span class="timeline-arrow">→</span>
+      <div class="timeline-item">
+        <strong>6ヶ月目〜</strong><br>本格運用
+      </div>
+    </div>
+  </div>
+
+  <!-- 次のアクション -->
+  <div class="section" style="border-color:#F39C12;background:#FEF9E7;">
+    <h2 style="border-left-color:#F39C12;">📝 担当者にお願いしたいこと</h2>
+    <div class="item"><strong>第2回ヒアリングへの回答</strong>（30〜60分・分かる範囲でOK）</div>
+    <div class="item"><strong>並行運用期間のご協力</strong>（2ヶ月目・紙＋システム同時運用）</div>
+    <div class="item"><strong>研修参加</strong>（役割別 30分〜4時間）</div>
+  </div>
+
+  <div class="footer">
+    📎 詳細資料：仕様書18本＋プロトタイプ5本＋業務目線サマリー＋費用最小化開発プラン<br>
+    お問合せ：前田 健一郎（maeda@areit-labo.com）｜作成日：2026年4月30日
+  </div>
+
+</div>
+</body>
+</html>

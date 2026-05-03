@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>シルキー 日次サービス提供スケジュール</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    margin: 0; padding: 16px;
+    background: #ECF0F1;
+    color: #2C3E50;
+  }
+  .container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid #2E5984;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    margin: 0;
+    color: #2E5984;
+    font-size: 24px;
+  }
+  .header .meta {
+    text-align: right;
+    color: #666;
+    font-size: 12px;
+  }
+  .ai-status {
+    background: linear-gradient(135deg, #27AE60, #1E8449);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .ai-status .badges {
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .ai-status .badge {
+    background: rgba(255,255,255,0.2);
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+  .schedule {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .schedule th, .schedule td {
+    border: 1px solid #BDC3C7;
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .schedule thead th {
+    background: #2E5984;
+    color: white;
+    font-weight: normal;
+    padding: 6px 4px;
+  }
+  .col-staff {
+    width: 80px;
+    background: #F4F6F7;
+    font-weight: bold;
+    text-align: left !important;
+    padding-left: 8px !important;
+  }
+  .col-staff small {
+    display: block;
+    color: #888;
+    font-size: 9px;
+    font-weight: normal;
+  }
+  .col-time {
+    width: 70px;
+  }
+  .col-time.h {
+    background: #2E5984;
+  }
+  .schedule tbody td {
+    height: 36px;
+  }
+  .cell-content {
+    color: white;
+    padding: 3px 2px;
+    font-size: 10px;
+    line-height: 1.1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .cell-content .user {
+    font-weight: bold;
+  }
+  .cell-content .svc {
+    opacity: 0.85;
+    font-size: 9px;
+  }
+  .legend {
+    background: #F4F6F7;
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 12px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 11px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+  }
+  .section-divider {
+    background: #34495E;
+    color: white;
+    text-align: center !important;
+    font-weight: bold;
+    padding: 8px !important;
+  }
+  .special-staff td.cell-content,
+  .special-staff td {
+    background: #FAFAFA !important;
+    color: #888 !important;
+    font-style: italic;
+  }
+  .special-staff .cell-content {
+    color: #555 !important;
+  }
+  .ai-buttons {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+  .btn {
+    padding: 14px 32px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  }
+  .btn-primary {
+    background: #27AE60;
+    color: white;
+  }
+  .btn-secondary {
+    background: #4A90E2;
+    color: white;
+  }
+  .summary {
+    margin-top: 16px;
+    padding: 16px;
+    background: #FFF8E1;
+    border-left: 4px solid #F5A623;
+    border-radius: 4px;
+  }
+  .summary h3 {
+    margin: 0 0 8px 0;
+    color: #D68910;
+  }
+  .summary ul {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 13px;
+    color: #5D4037;
+  }
+  .off {
+    background: #ECECEC !important;
+    color: #999;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div>
+      <h1>📋 シルキー サービス提供スケジュール</h1>
+      <div style="color:#666;margin-top:4px;font-size:14px;">2026年5月10日（日）</div>
+    </div>
+    <div class="meta">
+      AI自動作成<br>
+      最終更新: 2026/04/30 09:30
+    </div>
+  </div>
+
+  <div class="ai-status">
+    <div>
+      <strong>🤖 AI自動シフト生成完了（C+案：守られた完全自動）</strong>
+    </div>
+    <div class="badges">
+      <span class="badge">✅ ダブルブッキング: 0件</span>
+      <span class="badge">✅ 勤務時間外: 0件</span>
+      <span class="badge">✅ 法定休憩: 全員確保</span>
+      <span class="badge">⚠️ 入浴介助 10:30に4名集中</span>
+    </div>
+  </div>
+
+  <table class="schedule">
+    <thead>
+      <tr>
+        <th class="col-staff">スタッフ</th>
+        <th class="col-time">07:00</th>
+        <th class="col-time">07:30</th>
+        <th class="col-time">08:00</th>
+        <th class="col-time">08:30</th>
+        <th class="col-time">09:00</th>
+        <th class="col-time">09:30</th>
+        <th class="col-time">10:00</th>
+        <th class="col-time">10:30</th>
+        <th class="col-time">11:00</th>
+        <th class="col-time">11:30</th>
+        <th class="col-time">12:00</th>
+        <th class="col-time">12:30</th>
+        <th class="col-time">13:00</th>
+        <th class="col-time">13:30</th>
+        <th class="col-time">14:00</th>
+        <th class="col-time">14:30</th>
+        <th class="col-time">15:00</th>
+        <th class="col-time">15:30</th>
+        <th class="col-time">16:00</th>
+        <th class="col-time">16:30</th>
+        <th class="col-time">17:00</th>
+        <th class="col-time">17:30</th>
+        <th class="col-time">18:00</th>
+        <th class="col-time">18:30</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="25" class="section-divider">━━ 介護スタッフ14名（自動配置） ━━</td></tr>
+      <tr>
+        <td class="col-staff">上村<small>常勤 日勤<br>8:00-18:00</small></td>
+        <td></td>
+        <td></td>
+        <td style="background:#7ED321;"><div class="cell-content"><div class="user">冷水</div><div class="svc">(身1生1)</div></div></td>
+        <td style="background:#7ED321;"><div class="cell-content"><div class="user">冷水</div><div class="svc">(身1生1)</div></div></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">村上</div><div class="svc">(身2)</div></div></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">村上</div><div class="svc">(身2)</div></div></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">田代</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">田代</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">森</div><div class="svc">(身1)</div></div></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">冷水</div><div class="svc">(身1)</div></div></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">冷水</div><div class="svc">(身2)</div></div></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">冷水</div><div class="svc">(身2)</div></div></td>
+        <td style="background:#D8D8D8;"><div class="cell-content"><div class="user">誘導</div><div class="svc">(食堂誘導)</div></div></td>
+        <td></td>
+        <td style="background:#BD10E0;"><div class="cell-content"><div class="user">配薬</div><div class="svc">(配薬)</div></div></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">原田</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">原田</div><div class="svc">(入浴)</div></div></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">冷水</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-staff">原<small>常勤 日勤<br>8:00-18:00</small></td>
+        <td></td>
+        <td></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">村上</div><div class="svc">(身2)</div></div></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">村上</div><div class="svc">(身2)</div></div></td>
+        <td style="background:#D8D8D8;"><div class="cell-content"><div class="user">誘導</div><div class="svc">(食堂誘導)</div></div></td>
+        <td></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">藤本</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">藤本</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#BD10E0;"><div class="cell-content"><div class="user">配薬</div><div class="svc">(配薬)</div></div></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">森本</div><div class="svc">(身1)</div></div></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td style="background:#7ED321;"><div class="cell-content"><div class="user">高松</div><div class="svc">(身1生1)</div></div></td>
+        <td style="background:#7ED321;"><div class="cell-content"><div class="user">高松</div><div class="svc">(身1生1)</div></div></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">門田見</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">門田見</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#B8B8B8;"><div class="cell-content"><div class="user">清掃</div><div class="svc">(住宅清掃)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">冷水</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-staff">脇田<small>常勤 日勤<br>8:00-18:00</small></td>
+        <td></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">藤本</div><div class="svc">(身1)</div></div></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">藤本</div><div class="svc">(身1)</div></div></td>
+        <td style="background:#7ED321;"><div class="cell-content"><div class="user">田代</div><div class="svc">(身1生1)</div></div></td>
+        <td style="background:#7ED321;"><div class="cell-content"><div class="user">田代</div><div class="svc">(身1生1)</div></div></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">柴田</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">柴田</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#9013FE;"><div class="cell-content"><div class="user">巡回</div><div class="svc">(巡回)</div></div></td>
+        <td style="background:#9013FE;"><div class="cell-content"><div class="user">巡回</div><div class="svc">(巡回)</div></div></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">神山</div><div class="svc">(身2)</div></div></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">神山</div><div class="svc">(身2)</div></div></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">土山</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td style="background:#BD10E0;"><div class="cell-content"><div class="user">配薬</div><div class="svc">(配薬)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">森</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-staff">田中<small>常勤 日勤<br>8:00-18:00</small></td>
+        <td></td>
+        <td></td>
+        <td style="background:#BD10E0;"><div class="cell-content"><div class="user">配薬</div><div class="svc">(配薬)</div></div></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">林</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">原田</div><div class="svc">(身1)</div></div></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">中根</div><div class="svc">(身2)</div></div></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">中根</div><div class="svc">(身2)</div></div></td>
+        <td></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td style="background:#B8B8B8;"><div class="cell-content"><div class="user">清掃</div><div class="svc">(住宅清掃)</div></div></td>
+        <td></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">津田</div><div class="svc">(入浴)</div></div></td>
+        <td></td>
+        <td style="background:#D8D8D8;"><div class="cell-content"><div class="user">誘導</div><div class="svc">(誘導)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">徳永</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-staff">柳田<small>常勤 日勤<br>8:00-18:00</small></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">渡邊</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">渡辺</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">渡辺</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#BD10E0;"><div class="cell-content"><div class="user">配薬</div><div class="svc">(配薬)</div></div></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">東</div><div class="svc">(身1)</div></div></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">今井</div><div class="svc">(身2)</div></div></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">今井</div><div class="svc">(身2)</div></div></td>
+        <td style="background:#9013FE;"><div class="cell-content"><div class="user">巡回</div><div class="svc">(巡回)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">本村</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-staff">石井<small>常勤 日勤<br>8:00-18:00</small></td>
+        <td></td>
+        <td></td>
+        <td style="background:#D8D8D8;"><div class="cell-content"><div class="user">誘導</div><div class="svc">(食堂誘導)</div></div></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">太田</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">梅本</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">濵岡</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td></td>
+        <td style="background:#9013FE;"><div class="cell-content"><div class="user">巡回</div><div class="svc">(巡回)</div></div></td>
+        <td></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">赤木</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">赤木</div><div class="svc">(入浴)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">奈須</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-staff">村川<small>常勤 日勤<br>8:00-18:00</small></td>
+        <td></td>
+        <td></td>
+        <td style="background:#BD10E0;"><div class="cell-content"><div class="user">配薬</div><div class="svc">(配薬)</div></div></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">橋本</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">橋本</div><div class="svc">(入浴)</div></div></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">三島</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td></td>
+        <td style="background:#D8D8D8;"><div class="cell-content"><div class="user">誘導</div><div class="svc">(誘導)</div></div></td>
+        <td></td>
+        <td style="background:#B8B8B8;"><div class="cell-content"><div class="user">清掃</div><div class="svc">(住宅清掃)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">新貝</div><div class="svc">(身2)</div></div></td>
+        <td style="background:#2E5984;"><div class="cell-content"><div class="user">新貝</div><div class="svc">(身2)</div></div></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-staff">布田川<small>パート 日勤<br>9:00-15:00</small></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="background:#D8D8D8;"><div class="cell-content"><div class="user">誘導</div><div class="svc">(誘導)</div></div></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">清水</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">清水</div><div class="svc">(入浴)</div></div></td>
+        <td></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td></td>
+        <td style="background:#B8B8B8;"><div class="cell-content"><div class="user">住宅</div><div class="svc">(住宅清掃)</div></div></td>
+        <td></td>
+        <td style="background:#B8B8B8;"><div class="cell-content"><div class="user">住宅</div><div class="svc">(住宅清掃)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-staff">河田<small>パート 日勤<br>9:00-15:00</small></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="background:#D8D8D8;"><div class="cell-content"><div class="user">誘導</div><div class="svc">(誘導)</div></div></td>
+        <td></td>
+        <td style="background:#9013FE;"><div class="cell-content"><div class="user">巡回</div><div class="svc">(巡回)</div></div></td>
+        <td></td>
+        <td style="background:#B8B8B8;"><div class="cell-content"><div class="user">住宅</div><div class="svc">(住宅清掃)</div></div></td>
+        <td></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td></td>
+        <td style="background:#D8D8D8;"><div class="cell-content"><div class="user">誘導</div><div class="svc">(誘導)</div></div></td>
+        <td></td>
+        <td style="background:#B8B8B8;"><div class="cell-content"><div class="user">住宅</div><div class="svc">(住宅清掃)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-staff">黒田<small>常勤 夜勤<br>16:00-翌8:00</small></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="background:#2C3E50;"><div class="cell-content"><div class="user">夜勤</div><div class="svc">(夜勤開始)</div></div></td>
+        <td style="background:#2C3E50;"><div class="cell-content"><div class="user">夜勤</div><div class="svc">(夜勤)</div></div></td>
+        <td style="background:#2C3E50;"><div class="cell-content"><div class="user">夜勤</div><div class="svc">(夜勤)</div></div></td>
+        <td style="background:#2C3E50;"><div class="cell-content"><div class="user">夜勤</div><div class="svc">(夜勤)</div></div></td>
+        <td style="background:#2C3E50;"><div class="cell-content"><div class="user">夜勤</div><div class="svc">(夜勤)</div></div></td>
+        <td style="background:#2C3E50;"><div class="cell-content"><div class="user">夜勤</div><div class="svc">(夜勤)</div></div></td>
+      </tr>
+      <tr>
+        <td class="col-staff">中小路<small>常勤 夜勤明け<br>休</small></td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+      </tr>
+      <tr>
+        <td class="col-staff">出納<small>常勤 休<br>休</small></td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+        <td class="off">休</td>
+      </tr>
+      <tr>
+        <td class="col-staff">石坂<small>常勤 日勤<br>8:00-18:00</small></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">辻</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">酒井</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#F5A623;"><div class="cell-content"><div class="user">酒井</div><div class="svc">(入浴)</div></div></td>
+        <td style="background:#BD10E0;"><div class="cell-content"><div class="user">配薬</div><div class="svc">(配薬)</div></div></td>
+        <td></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td></td>
+        <td style="background:#D8D8D8;"><div class="cell-content"><div class="user">誘導</div><div class="svc">(誘導)</div></div></td>
+        <td></td>
+        <td style="background:#9013FE;"><div class="cell-content"><div class="user">巡回</div><div class="svc">(巡回)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="background:#4A90E2;"><div class="cell-content"><div class="user">酒井</div><div class="svc">(身1)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-staff">安部<small>パート 日勤<br>9:00-15:00</small></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="background:#D8D8D8;"><div class="cell-content"><div class="user">誘導</div><div class="svc">(誘導)</div></div></td>
+        <td></td>
+        <td style="background:#B8B8B8;"><div class="cell-content"><div class="user">住宅</div><div class="svc">(住宅清掃)</div></div></td>
+        <td></td>
+        <td style="background:#B8B8B8;"><div class="cell-content"><div class="user">住宅</div><div class="svc">(住宅清掃)</div></div></td>
+        <td></td>
+        <td style="background:#FFF;"><div class="cell-content"><div class="user">休憩</div><div class="svc">(休憩)</div></div></td>
+        <td></td>
+        <td style="background:#B8B8B8;"><div class="cell-content"><div class="user">住宅</div><div class="svc">(住宅清掃)</div></div></td>
+        <td></td>
+        <td style="background:#B8B8B8;"><div class="cell-content"><div class="user">住宅</div><div class="svc">(住宅清掃)</div></div></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr><td colspan="25" class="section-divider">━━ 特定技能人材 4名（参考表示・自動配置対象外） ━━</td></tr>
+      <tr class="special-staff">
+        <td class="col-staff">◯◯（特定）<small>配膳<br>7:30-8:00</small></td>
+        <td></td>
+        <td class="cell-content">配膳業務</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr class="special-staff">
+        <td class="col-staff">△△（特定）<small>配膳<br>7:30-8:00</small></td>
+        <td></td>
+        <td class="cell-content">配膳業務</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr class="special-staff">
+        <td class="col-staff">□□（特定）<small>配膳<br>7:30-8:00</small></td>
+        <td></td>
+        <td class="cell-content">配膳業務</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr class="special-staff">
+        <td class="col-staff">◇◇（特定）<small>下膳<br>8:00-8:30</small></td>
+        <td></td>
+        <td></td>
+        <td class="cell-content">下膳業務</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="legend">
+    <strong>凡例：</strong>
+    <div class="legend-item"><div class="legend-color" style="background:#4A90E2"></div><span>身1（身体介護1）</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#2E5984"></div><span>身2（身体介護2）</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#7ED321"></div><span>身1生1（身体1生活1）</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#B8B8B8"></div><span>住宅（介護保険外）</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#F5A623"></div><span>入浴介助</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#BD10E0"></div><span>配薬</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#9013FE"></div><span>巡回</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#D8D8D8"></div><span>誘導</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#2C3E50"></div><span>夜勤</span></div>
+  </div>
+
+  <div class="summary">
+    <h3>📊 AI生成サマリー（10の安全装置による）</h3>
+    <ul>
+      <li>✅ <strong>ハード制約：すべてクリア</strong>（ダブルブッキング・勤務時間外・法定休憩・夜勤指定メンバー・入浴4回連続NG）</li>
+      <li>⚠️ <strong>注意</strong>：入浴介助が10:30前後に4名集中。問題なければこのまま、調整したい場合は該当セルをクリック</li>
+      <li>📊 <strong>先月との変化</strong>：12箇所の配置が変更されています（[変更箇所を見る]ボタンで確認可能）</li>
+      <li>💡 <strong>裏で2件の別案を生成済み</strong>。気になる場合は[別の案を見る]で確認可能</li>
+      <li>🔒 <strong>ロック機能</strong>：固定したい配置は右クリック → ロック</li>
+    </ul>
+  </div>
+
+  <div class="ai-buttons">
+    <button class="btn btn-primary">🖨️ A3カラー印刷する</button>
+    <button class="btn btn-secondary">🔄 別の案を見る</button>
+  </div>
+
+  <div style="text-align:center;margin-top:20px;color:#999;font-size:11px;">
+    🤖 シルキー業務改善プロトタイプ - C+案（守られた完全自動）+ D-2（色分け統合）レイアウト
+  </div>
+
+</div>
+</body>
+</html>

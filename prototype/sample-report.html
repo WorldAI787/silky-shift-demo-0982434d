@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>冷水 美喜子 様 - 2026年4月 サービス計画</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    margin: 0; padding: 20px;
+    background: #F5F7FA; color: #2C3E50;
+  }
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  h1 {
+    color: #2E5984;
+    border-bottom: 3px solid #2E5984;
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+  }
+  .header-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px 30px;
+    background: #F4F6F7;
+    padding: 20px;
+    border-radius: 6px;
+    margin-bottom: 30px;
+  }
+  .header-info .item {
+    display: flex;
+    border-bottom: 1px dotted #D0D0D0;
+    padding-bottom: 8px;
+  }
+  .header-info .label {
+    width: 140px;
+    font-weight: bold;
+    color: #555;
+  }
+  .header-info .value {
+    flex: 1;
+    color: #2C3E50;
+  }
+  h2 {
+    color: #2E5984;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    padding-left: 10px;
+    border-left: 4px solid #2E5984;
+  }
+  .schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-bottom: 30px;
+  }
+  .schedule-table th, .schedule-table td {
+    border: 1px solid #BDBDBD;
+    padding: 4px 2px;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .schedule-table th {
+    background: #2E5984;
+    color: white;
+    font-weight: normal;
+    padding: 6px 2px;
+  }
+  .schedule-table .col-time {
+    width: 100px;
+    background: #F4F6F7;
+    font-weight: bold;
+    text-align: left;
+    padding-left: 8px;
+  }
+  .schedule-table .col-service {
+    width: 90px;
+    text-align: left;
+    padding-left: 8px;
+  }
+  .schedule-table .col-day {
+    width: 28px;
+  }
+  .schedule-table .col-day.weekend {
+    background: #FFF5F5;
+  }
+  .schedule-table .day-header.sun { color: #E74C3C; }
+  .schedule-table .day-header.sat { color: #3498DB; }
+  .schedule-table .col-total {
+    width: 50px;
+    background: #FAFAFA;
+    font-weight: bold;
+  }
+  .mark {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    line-height: 18px;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+  }
+  .mark.plan {
+    background: #4A90E2;
+  }
+  .mark.actual {
+    background: #27AE60;
+  }
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    background: #F4F6F7;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    border: 1px solid #BDBDBD;
+  }
+  .summary-card {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+  .summary-card .card {
+    background: linear-gradient(135deg, #4A90E2, #2E5984);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .summary-card .card-value {
+    font-size: 32px;
+    font-weight: bold;
+    margin: 5px 0;
+  }
+  .summary-card .card-label {
+    font-size: 12px;
+    opacity: 0.9;
+  }
+  .code-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .code-table th, .code-table td {
+    border: 1px solid #BDBDBD;
+    padding: 8px 12px;
+  }
+  .code-table th {
+    background: #F4F6F7;
+    text-align: left;
+  }
+  .code-table td.right {
+    text-align: right;
+  }
+  .footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 2px solid #E0E0E0;
+    text-align: center;
+    color: #999;
+    font-size: 12px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: white;
+    margin-right: 4px;
+  }
+  .badge.success { background: #27AE60; }
+  .badge.info { background: #4A90E2; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>📋 サービス提供票 自動抽出結果</h1>
+
+  <!-- サマリーカード -->
+  <div class="summary-card">
+    <div class="card">
+      <div class="card-label">対象月</div>
+      <div class="card-value">2026/4</div>
+      <div class="card-label">月の日数 30日</div>
+    </div>
+    <div class="card" style="background: linear-gradient(135deg, #27AE60, #1E8449);">
+      <div class="card-label">利用者</div>
+      <div class="card-value" style="font-size: 22px; line-height: 1.2;">冷水 美喜子</div>
+      <div class="card-label">要介護4</div>
+    </div>
+    <div class="card" style="background: linear-gradient(135deg, #F5A623, #D68910);">
+      <div class="card-label">サービス種類</div>
+      <div class="card-value">6</div>
+      <div class="card-label">時間帯別</div>
+    </div>
+    <div class="card" style="background: linear-gradient(135deg, #BD10E0, #8E0FAA);">
+      <div class="card-label">月間予定総数</div>
+      <div class="card-value">87</div>
+      <div class="card-label">回</div>
+    </div>
+  </div>
+
+  <!-- 利用者プロファイル -->
+  <h2>👤 利用者プロファイル</h2>
+  <div class="header-info">
+    <div class="item"><div class="label">氏名</div><div class="value">冷水 美喜子 様</div></div>
+    <div class="item"><div class="label">フリガナ</div><div class="value">ヒヤミズ ミキコ</div></div>
+    <div class="item"><div class="label">生年月日</div><div class="value">1954年8月24日</div></div>
+    <div class="item"><div class="label">要介護度</div><div class="value"><span class="badge info">要介護4</span></div></div>
+    <div class="item"><div class="label">保険者</div><div class="value">天草市 (432153)</div></div>
+    <div class="item"><div class="label">被保険者番号</div><div class="value">0216657700</div></div>
+    <div class="item"><div class="label">区分支給限度額</div><div class="value">30,938 単位/月</div></div>
+    <div class="item"><div class="label">限度額適用期間</div><div class="value">令和5年12月 から 令和8年11月 まで</div></div>
+    <div class="item"><div class="label">居宅介護支援事業所</div><div class="value">指定居宅介護支援事業所 たさき</div></div>
+    <div class="item"><div class="label">担当ケアマネ</div><div class="value">泉 叙子 (096-356-0666)</div></div>
+    <div class="item"><div class="label">提供票作成日</div><div class="value">2026年4月13日</div></div>
+    <div class="item"><div class="label">前月までの短期入所</div><div class="value">0 日</div></div>
+  </div>
+
+  <!-- 月間サービス計画マトリクス -->
+  <h2>📅 月間サービス計画（2026年4月）</h2>
+  <div class="legend">
+    <div class="legend-item"><span class="mark plan">1</span><span>予定</span></div>
+    <div class="legend-item"><span class="mark actual">1</span><span>実績</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#4A90E2"></div><span>身1 (身体介護１)</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#7ED321"></div><span>身1生1 (身体１生活１)</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#2E5984"></div><span>身2 (身体介護２)</span></div>
+  </div>
+  <table class="schedule-table">
+    <thead>
+      <tr>
+        <th class="col-time">提供時間帯</th>
+        <th class="col-service">サービス</th>
+        <th>区分</th>
+        <th class="col-day  day-header ">1</th>
+        <th class="col-day  day-header ">2</th>
+        <th class="col-day  day-header ">3</th>
+        <th class="col-day weekend day-header sat">4</th>
+        <th class="col-day weekend day-header sun">5</th>
+        <th class="col-day  day-header ">6</th>
+        <th class="col-day  day-header ">7</th>
+        <th class="col-day  day-header ">8</th>
+        <th class="col-day  day-header ">9</th>
+        <th class="col-day  day-header ">10</th>
+        <th class="col-day weekend day-header sat">11</th>
+        <th class="col-day weekend day-header sun">12</th>
+        <th class="col-day  day-header ">13</th>
+        <th class="col-day  day-header ">14</th>
+        <th class="col-day  day-header ">15</th>
+        <th class="col-day  day-header ">16</th>
+        <th class="col-day  day-header ">17</th>
+        <th class="col-day weekend day-header sat">18</th>
+        <th class="col-day weekend day-header sun">19</th>
+        <th class="col-day  day-header ">20</th>
+        <th class="col-day  day-header ">21</th>
+        <th class="col-day  day-header ">22</th>
+        <th class="col-day  day-header ">23</th>
+        <th class="col-day  day-header ">24</th>
+        <th class="col-day weekend day-header sat">25</th>
+        <th class="col-day weekend day-header sun">26</th>
+        <th class="col-day  day-header ">27</th>
+        <th class="col-day  day-header ">28</th>
+        <th class="col-day  day-header ">29</th>
+        <th class="col-day  day-header ">30</th>
+        <th class="col-total">合計</th>
+      </tr>
+      <tr>
+        <th class="col-time"></th>
+        <th class="col-service"></th>
+        <th></th>
+        <th class="col-day  day-header ">水</th>
+        <th class="col-day  day-header ">木</th>
+        <th class="col-day  day-header ">金</th>
+        <th class="col-day weekend day-header sat">土</th>
+        <th class="col-day weekend day-header sun">日</th>
+        <th class="col-day  day-header ">月</th>
+        <th class="col-day  day-header ">火</th>
+        <th class="col-day  day-header ">水</th>
+        <th class="col-day  day-header ">木</th>
+        <th class="col-day  day-header ">金</th>
+        <th class="col-day weekend day-header sat">土</th>
+        <th class="col-day weekend day-header sun">日</th>
+        <th class="col-day  day-header ">月</th>
+        <th class="col-day  day-header ">火</th>
+        <th class="col-day  day-header ">水</th>
+        <th class="col-day  day-header ">木</th>
+        <th class="col-day  day-header ">金</th>
+        <th class="col-day weekend day-header sat">土</th>
+        <th class="col-day weekend day-header sun">日</th>
+        <th class="col-day  day-header ">月</th>
+        <th class="col-day  day-header ">火</th>
+        <th class="col-day  day-header ">水</th>
+        <th class="col-day  day-header ">木</th>
+        <th class="col-day  day-header ">金</th>
+        <th class="col-day weekend day-header sat">土</th>
+        <th class="col-day weekend day-header sun">日</th>
+        <th class="col-day  day-header ">月</th>
+        <th class="col-day  day-header ">火</th>
+        <th class="col-day  day-header ">水</th>
+        <th class="col-day  day-header ">木</th>
+        <th class="col-total"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="col-time" rowspan="2">08:00～08:59</td>
+        <td class="col-service" rowspan="2"><span style="background:#7ED321;color:white;padding:2px 6px;border-radius:3px;font-size:10px;">身1生1</span><br><small style="color:#666">身体１生活１</small></td>
+        <td style="background:#E8F4FB;font-size:10px;">予定</td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-total" style="background:#E8F4FB;">5</td>
+      </tr>
+      <tr>
+        <td style="background:#E8F8F0;font-size:10px;">実績</td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-total" style="background:#E8F8F0;">2</td>
+      </tr>
+      <tr>
+        <td class="col-time" rowspan="2">09:00～09:29</td>
+        <td class="col-service" rowspan="2"><span style="background:#4A90E2;color:white;padding:2px 6px;border-radius:3px;font-size:10px;">身1</span><br><small style="color:#666">身体介護１</small></td>
+        <td style="background:#E8F4FB;font-size:10px;">予定</td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-total" style="background:#E8F4FB;">25</td>
+      </tr>
+      <tr>
+        <td style="background:#E8F8F0;font-size:10px;">実績</td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day weekend"><span class="mark actual">1</span></td>
+        <td class="col-day weekend"><span class="mark actual">1</span></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-total" style="background:#E8F8F0;">7</td>
+      </tr>
+      <tr>
+        <td class="col-time" rowspan="2">11:30～11:59</td>
+        <td class="col-service" rowspan="2"><span style="background:#4A90E2;color:white;padding:2px 6px;border-radius:3px;font-size:10px;">身1</span><br><small style="color:#666">身体介護１</small></td>
+        <td style="background:#E8F4FB;font-size:10px;">予定</td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-total" style="background:#E8F4FB;">18</td>
+      </tr>
+      <tr>
+        <td style="background:#E8F8F0;font-size:10px;">実績</td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"><span class="mark actual">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-total" style="background:#E8F8F0;">6</td>
+      </tr>
+      <tr>
+        <td class="col-time" rowspan="2">13:00～13:59</td>
+        <td class="col-service" rowspan="2"><span style="background:#2E5984;color:white;padding:2px 6px;border-radius:3px;font-size:10px;">身2</span><br><small style="color:#666">身体介護２</small></td>
+        <td style="background:#E8F4FB;font-size:10px;">予定</td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-total" style="background:#E8F4FB;">5</td>
+      </tr>
+      <tr>
+        <td style="background:#E8F8F0;font-size:10px;">実績</td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-total" style="background:#E8F8F0;">2</td>
+      </tr>
+      <tr>
+        <td class="col-time" rowspan="2">13:00～13:59</td>
+        <td class="col-service" rowspan="2"><span style="background:#7ED321;color:white;padding:2px 6px;border-radius:3px;font-size:10px;">身1生1</span><br><small style="color:#666">身体１生活１</small></td>
+        <td style="background:#E8F4FB;font-size:10px;">予定</td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-total" style="background:#E8F4FB;">4</td>
+      </tr>
+      <tr>
+        <td style="background:#E8F8F0;font-size:10px;">実績</td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"><span class="mark actual">1</span></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-total" style="background:#E8F8F0;">1</td>
+      </tr>
+      <tr>
+        <td class="col-time" rowspan="2">17:00～17:29</td>
+        <td class="col-service" rowspan="2"><span style="background:#4A90E2;color:white;padding:2px 6px;border-radius:3px;font-size:10px;">身1</span><br><small style="color:#666">身体介護１</small></td>
+        <td style="background:#E8F4FB;font-size:10px;">予定</td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day weekend"><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-day "><span class="mark plan">1</span></td>
+        <td class="col-total" style="background:#E8F4FB;">30</td>
+      </tr>
+      <tr>
+        <td style="background:#E8F8F0;font-size:10px;">実績</td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day weekend"><span class="mark actual">1</span></td>
+        <td class="col-day weekend"><span class="mark actual">1</span></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "><span class="mark actual">1</span></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day weekend"></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-day "></td>
+        <td class="col-total" style="background:#E8F8F0;">9</td>
+      </tr>
+    </tbody>
+  </table>
+  <h2>💰 サービスコード詳細（請求情報）</h2>
+  <table class="code-table">
+    <thead><tr>
+      <th>サービス内容</th><th>コード</th><th>単位数</th><th>回数</th><th>金額/小計</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td>身体介護１</td>
+        <td>111111</td>
+        <td class="right">244</td>
+        <td class="right">22</td>
+        <td class="right">5368</td>
+      </tr>
+      <tr>
+        <td>身体介護２</td>
+        <td>111211</td>
+        <td class="right">387</td>
+        <td class="right">2</td>
+        <td class="right">774</td>
+      </tr>
+      <tr>
+        <td>身体１生活１</td>
+        <td>114111</td>
+        <td class="right">309</td>
+        <td class="right">3</td>
+        <td class="right">927</td>
+      </tr>
+      <tr>
+        <td>訪問介護 合計</td>
+        <td></td>
+        <td class="right">-</td>
+        <td class="right">-</td>
+        <td class="right">(7069)</td>
+      </tr>
+      <tr>
+        <td>訪問介護同一建物減算
+３</td>
+        <td>114116</td>
+        <td class="right">-</td>
+        <td class="right">-</td>
+        <td class="right">(-848)</td>
+      </tr>
+      <tr>
+        <td>訪問介護処遇改善加算
+Ⅱ</td>
+        <td>116274</td>
+        <td class="right">-</td>
+        <td class="right">-</td>
+        <td class="right">(1394)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <p>📁 抽出元PDF: 冷水　美喜子.pdf</p>
+    <p>⏰ 抽出日時: 2026-04-30T09:06:42.731799</p>
+    <p>🤖 シルキー業務改善プロトタイプ - PDF自動抽出デモ</p>
+  </div>
+</div>
+</body>
+</html>
