@@ -312,7 +312,28 @@
     z-index: 2;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   }
-  .schedule tbody td.empty:hover { background: #FFF8DC; }
+  .schedule tbody td.empty {
+    background: #FFF9C4;
+    cursor: pointer;
+    position: relative;
+  }
+  .schedule tbody td.empty::after {
+    content: "＋空き";
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    color: #B7950B;
+    font-size: 10px;
+    font-weight: bold;
+    opacity: 0.6;
+  }
+  .schedule tbody td.empty:hover {
+    background: #FFE082;
+  }
+  .schedule tbody td.empty:hover::after {
+    opacity: 1;
+    color: #6E4500;
+  }
   .cell-content {
     color: white;
     padding: 3px 2px;
@@ -1962,6 +1983,22 @@ function initSchedule() {
   // 誘導セル（60分・3人ずつ）
   const guideLunch = { user:'誘導(昼)', svc:'食堂誘導', color: COLORS.guide, dur:60, isGuide:true };
   const guideAfternoon = { user:'誘導(午後)', svc:'食堂誘導', color: COLORS.guide, dur:60, isGuide:true };
+  // 外部利用者：移動15分+サービス15分のペア（サービス開始時）
+  const extStart = (user, svc) => ({
+    type: 'paired', user,
+    first: { svc: '移動', color: COLORS.movement, label:'🚗' },
+    second: { svc: svc + '①', color: COLORS.visit_l }
+  });
+  // 外部利用者：サービス15分+移動15分のペア（サービス終了時）
+  const extEnd = (user, svc) => ({
+    type: 'paired', user,
+    first: { svc: svc + '③', color: COLORS.visit_l },
+    second: { svc: '移動', color: COLORS.movement, label:'🚗' }
+  });
+  // 外部利用者：サービス本体（30分・中間）
+  const extMid = (user, svc) => ({
+    user, svc: svc + '②', color: COLORS.visit_l, isExt: true
+  });
 
   schedule = {
     // ─── s01 上村（常勤・日勤）：朝の配薬セット ───
@@ -1974,32 +2011,39 @@ function initSchedule() {
       '12:00': REST, '12:30': REST,
       '13:00': sixty('冷水','身2',COLORS.visit2),               // 60分: 13:00-14:00
       '14:00': {user:'森本',svc:'身1',color:COLORS.visit},
+      '14:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '15:00': bath('原田'),                                 // 60分入浴
+      '16:00': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
       '16:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '17:00': {user:'冷水',svc:'身1',color:COLORS.visit},
+      '17:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
     },
 
-    // ─── s02 原（常勤・日勤）：外部訪問（栗山様）あり ───
+    // ─── s02 原（常勤・日勤）：外部訪問（栗山様） ───
     's02': {
-      '08:00': move('栗山'),                                     // 8:00-8:15 移動 / 8:15-8:30 移動（→外部訪問へ）
-      '08:30': sixty('栗山','身1生1',COLORS.visit_l),           // 60分: 外部サービス
-      '09:30': move('栗山'),                                     // 9:30-10:00 戻り移動
-      '10:00': bath('門田見'),                                // 浴室1（藤本様）→入院中だが表示用
+      '08:00': extStart('栗山','身1生1'),                       // 8:00-8:15 移動 / 8:15-8:30 サービス①
+      '08:30': extMid('栗山','身1生1'),                          // 8:30-9:00 サービス② (30分)
+      '09:00': extEnd('栗山','身1生1'),                          // 9:00-9:15 サービス③ / 9:15-9:30 移動
+      '09:30': bath('門田見'),                                   // 60分入浴
+      '10:30': {user:'森本',svc:'身1',color:COLORS.visit},
       '11:00': {user:'配薬準備',svc:'準備',color:COLORS.prep,isPrep:true,dur:30},  // 配薬準備30分
-      '11:30': {user:'森本',svc:'身1',color:COLORS.visit},
+      '11:30': {user:'藤本',svc:'住宅・水分',color:COLORS.home},
       '12:00': REST, '12:30': REST,
       '13:00': sixty('高松','身1生1',COLORS.visit_l),
-      '14:00': bath('赤木'),
+      '14:00': bath('赤木'),                                     // 60分入浴
       '15:00': {user:'清掃',svc:'住宅清掃',color:COLORS.home},
       '15:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
+      '16:00': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
+      '16:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '17:00': {user:'冷水',svc:'身1',color:COLORS.visit},
+      '17:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
     },
 
     // ─── s03 脇田（常勤・日勤）───
     's03': {
       '08:00': {user:'藤本',svc:'身1',color:COLORS.visit},
       '08:30': sixty('田代','身1生1',COLORS.visit_l),
-      '09:30': bath('柴田'),
+      '09:30': bath('柴田'),                                     // 60分入浴
       '10:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '11:00': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '11:30': {user:'土山',svc:'身1',color:COLORS.visit},
@@ -2007,66 +2051,93 @@ function initSchedule() {
       '13:00': sixty('神山','身2',COLORS.visit2),
       '14:00': {user:'土山',svc:'身1',color:COLORS.visit},
       '14:30': {user:'洗濯',svc:'住宅・洗濯',color:COLORS.laundry},
+      '15:00': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
       '15:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
+      '16:00': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
+      '16:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '17:00': {user:'森',svc:'身1',color:COLORS.visit},
+      '17:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
     },
 
-    // ─── s04 田中（常勤・日勤）：13時誘導① ───
+    // ─── s04 田中（常勤・日勤）：外部訪問（三糸様）+ 13時誘導① ───
     's04': {
-      '08:00': {user:'三糸',svc:'移動',color:COLORS.movement,type:'movement'},
-      '08:30': sixty('三糸','身1生1',COLORS.visit_l),
-      '09:30': move('三糸'),
+      '08:00': extStart('三糸','身1生1'),                       // 8:00-8:15 移動 / 8:15-8:30 サービス①
+      '08:30': extMid('三糸','身1生1'),                          // 8:30-9:00 サービス② (30分)
+      '09:00': extEnd('三糸','身1生1'),                          // 9:00-9:15 サービス③ / 9:15-9:30 移動
+      '09:30': {user:'林',svc:'身1',color:COLORS.visit},
       '10:00': {user:'林',svc:'身1',color:COLORS.visit},
       '10:30': sixty('中根','身2',COLORS.visit2),
+      '11:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '12:00': REST, '12:30': REST,
       '13:00': guideAfternoon,                                   // 13:00-14:00 誘導①(60分)
-      '14:00': bath('津田'),
+      '14:00': bath('津田'),                                     // 60分入浴
       '15:00': {user:'徳永',svc:'身1',color:COLORS.visit},
+      '15:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
       '16:00': {user:'巡回',svc:'巡回',color:COLORS.patrol},
+      '16:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
       '17:00': {user:'徳永',svc:'身1',color:COLORS.visit},
+      '17:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
     },
 
     // ─── s05 柳田（常勤・日勤）：13時誘導② ───
     's05': {
+      '08:00': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
+      '08:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
       '09:00': {user:'渡邊',svc:'身1',color:COLORS.visit},
-      '09:30': bath('渡辺'),
+      '09:30': bath('渡辺'),                                     // 60分入浴
       '10:30': {user:'東',svc:'身1',color:COLORS.visit},
+      '11:00': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '11:30': {user:'東',svc:'身1',color:COLORS.visit},
       '12:00': REST, '12:30': REST,
       '13:00': guideAfternoon,                                   // 13:00-14:00 誘導②(60分)
       '14:00': sixty('今井','身2',COLORS.visit2),
       '15:00': {user:'本村',svc:'身1',color:COLORS.visit},
       '15:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
+      '16:00': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
+      '16:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '17:00': {user:'本村',svc:'身1',color:COLORS.visit},
+      '17:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
     },
 
     // ─── s06 石井（常勤・日勤）───
     's06': {
       '08:00': {user:'太田',svc:'身1',color:COLORS.visit},
+      '08:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
       '09:00': {user:'梅本',svc:'身1',color:COLORS.visit},
+      '09:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
       '10:00': {user:'濵岡',svc:'身1',color:COLORS.visit},
+      '10:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '11:00': {user:'濵岡',svc:'身1',color:COLORS.visit},
       '11:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '12:00': REST, '12:30': REST,
       '13:00': {user:'洗濯',svc:'住宅・洗濯',color:COLORS.laundry},
-      '14:00': bath('福島'),
+      '13:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
+      '14:00': bath('福島'),                                     // 60分入浴
       '15:00': {user:'奈須',svc:'身1',color:COLORS.visit},
       '15:30': {user:'清掃',svc:'住宅清掃',color:COLORS.home},
+      '16:00': {user:'巡回',svc:'巡回',color:COLORS.patrol},
+      '16:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
       '17:00': {user:'奈須',svc:'身1',color:COLORS.visit},
+      '17:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
     },
 
     // ─── s07 村川（常勤・日勤）：夕方の配薬セット ───
     's07': {
-      '08:00': bath('橋本タ'),
+      '08:00': bath('橋本タ'),                                   // 60分入浴
       '09:00': {user:'橋本タ',svc:'身1',color:COLORS.visit},
+      '09:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
       '10:00': {user:'三島',svc:'身1',color:COLORS.visit},
       '10:30': sixty('神山','身1生1',COLORS.visit_l),
+      '11:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '12:00': REST, '12:30': REST,
       '13:00': {user:'清掃',svc:'住宅清掃',color:COLORS.home},
+      '13:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
       '14:00': {user:'巡回',svc:'巡回',color:COLORS.patrol},
+      '14:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
       '15:00': {user:'三島',svc:'身1',color:COLORS.visit},
+      '15:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '16:00': sixty('新貝','身2',COLORS.visit2),
-      '17:00': pair('村上','水分補給'),                          // 17:00-17:15 住宅 / 17:15-17:30 配薬（夕）
+      '17:00': pair('村上','水分補給'),                          // 夕配薬セット
       '17:30': {user:'新貝',svc:'身1',color:COLORS.visit},
     },
 
@@ -2102,19 +2173,25 @@ function initSchedule() {
       '18:30': {user:'夜勤',svc:'夜勤',color:COLORS.night},
     },
 
-    // ─── s13 石坂（常勤・日勤）：13時誘導③ ───
+    // ─── s13 石坂（常勤・日勤）：外部訪問（肥田様）+ 13時誘導③ ───
     's13': {
-      '09:00': {user:'肥田',svc:'移動',color:COLORS.movement,type:'movement'},
-      '09:30': sixty('肥田','身1',COLORS.visit),
-      '10:30': move('肥田'),
+      '08:00': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
+      '08:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
+      '09:00': extStart('肥田','身1'),                          // 9:00-9:15 移動 / 9:15-9:30 サービス①
+      '09:30': extMid('肥田','身1'),                             // 9:30-10:00 サービス② (30分)
+      '10:00': extEnd('肥田','身1'),                             // 10:00-10:15 サービス③ / 10:15-10:30 移動
+      '10:30': {user:'酒井浩',svc:'身1',color:COLORS.visit},
       '11:00': {user:'酒井浩',svc:'身1',color:COLORS.visit},
       '11:30': {user:'辻',svc:'身1',color:COLORS.visit},
       '12:00': REST, '12:30': REST,
       '13:00': guideAfternoon,                                   // 13:00-14:00 誘導③(60分)
-      '14:00': bath('酒井教'),
+      '14:00': bath('酒井教'),                                   // 60分入浴
       '15:00': {user:'酒井浩',svc:'身1',color:COLORS.visit},
       '15:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
+      '16:00': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
+      '16:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '17:00': {user:'徳永',svc:'身1',color:COLORS.visit},
+      '17:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
     },
 
     // ─── s14 安部（パート 9-15）：11時誘導 ───
@@ -2520,15 +2597,45 @@ function renderStaffingPanel() {
     recClass = activeStaff >= 7 ? 'ok' : 'warn';
   }
 
+  // 空き枠（empty slots within work hours）をカウント
+  let emptyCount = 0;
+  STAFF.forEach(staff => {
+    const status = getStaffStatus(staff);
+    if (['off','paid','wish','akeoff'].includes(status)) return;
+    const hours = getWorkHours(staff);
+    const row = schedule[staff.id] || {};
+    const skipNext = new Set();
+    TIME_SLOTS.forEach((t, idx) => {
+      if (skipNext.has(t)) return;
+      if (!isInWorkHours(t, hours)) return;
+      const cell = row[t];
+      if (!cell) emptyCount++;
+      if (cell && cell.dur === 60 && idx + 1 < TIME_SLOTS.length) {
+        skipNext.add(TIME_SLOTS[idx + 1]);
+      }
+    });
+  });
+
+  // 空き枠アラート
+  let emptyAlert = '';
+  if (emptyCount === 0) {
+    emptyAlert = '<div class="recommendation ok" style="background:rgba(39,174,96,0.4);">空き枠 0件・全枠埋まっています（最適配置）</div>';
+  } else if (emptyCount < 10) {
+    emptyAlert = `<div class="recommendation" style="background:rgba(243,156,18,0.4);">⚠️ 空き枠 ${emptyCount}件・住宅サービス等で埋めることを検討してください</div>`;
+  } else {
+    emptyAlert = `<div class="recommendation warn">🚨 空き枠 ${emptyCount}件・無駄な人件費が発生しています。出社人数調整を推奨</div>`;
+  }
+
   panel.innerHTML = `
     <h4>📊 本日の業務量と出社人数</h4>
     <div class="stats">
       <div class="stat"><div class="num">${activeStaff}</div><div class="lbl">出社スタッフ</div></div>
       <div class="stat"><div class="num">${totalShintai}</div><div class="lbl">身体介護回数</div></div>
       <div class="stat"><div class="num">${totalBath}</div><div class="lbl">入浴介助回数</div></div>
-      <div class="stat"><div class="num">${externalCount}</div><div class="lbl">外部訪問回数</div></div>
+      <div class="stat" style="${emptyCount > 0 ? 'background:rgba(243,156,18,0.5);' : 'background:rgba(39,174,96,0.4);'}"><div class="num">${emptyCount}</div><div class="lbl">空き枠（黄）</div></div>
     </div>
     <div class="recommendation ${recClass}">${recommendation}</div>
+    ${emptyAlert}
   `;
 }
 
