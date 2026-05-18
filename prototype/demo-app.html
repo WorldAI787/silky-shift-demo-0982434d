@@ -555,6 +555,75 @@
     padding: 0 4px;
     border-radius: 4px;
   }
+  /* 15分セル：コンパクト表示 */
+  .schedule td.duration-15 {
+    font-size: 9px;
+    position: relative;
+  }
+  .schedule td.duration-15 .cell-content {
+    padding: 1px 2px;
+    font-size: 9px;
+    line-height: 1.1;
+  }
+  .schedule td.duration-15 .cell-content .user {
+    font-size: 9px;
+  }
+  .schedule td.duration-15 .cell-content .svc {
+    font-size: 8px;
+  }
+  .schedule td.duration-15::before {
+    content: "15";
+    position: absolute;
+    top: 0px;
+    right: 1px;
+    font-size: 7px;
+    background: rgba(0,0,0,0.25);
+    color: white;
+    padding: 0 2px;
+    border-radius: 2px;
+    line-height: 1;
+  }
+  /* 15分タイムヘッダー：細い列 */
+  .schedule thead th.time-minor {
+    background: #4A6FA5;
+    font-size: 9px;
+    font-weight: normal;
+    opacity: 0.85;
+    padding: 4px 1px !important;
+  }
+  .schedule thead th.time-major {
+    background: #2E5984;
+    font-weight: bold;
+    padding: 6px 2px !important;
+  }
+  /* 15分グリッド：列幅を狭く */
+  .schedule {
+    table-layout: fixed;
+  }
+  .schedule thead th.time-major,
+  .schedule thead th.time-minor {
+    width: 36px;
+    min-width: 36px;
+  }
+  /* 提供票からの変更マーク */
+  .schedule td.changed-from-plan {
+    outline: 3px dashed #E67E22 !important;
+    outline-offset: -3px;
+    position: relative;
+  }
+  .schedule td.changed-from-plan::after {
+    content: "⚠️変";
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #E67E22;
+    color: white;
+    font-size: 8px;
+    font-weight: bold;
+    padding: 1px 4px;
+    border-radius: 0 0 0 4px;
+    z-index: 5;
+  }
 
   /* 浴室番号バッジ */
   .bath-badge {
@@ -1331,6 +1400,8 @@
           <div class="legend-item"><span class="constraint-mark" style="background:#666;">♂</span>男性スタッフのみ</div>
           <div class="legend-item"><span class="external-mark" style="background:#666;color:white;border:1px solid #BBB;">外</span>外部利用者</div>
           <div class="legend-item"><span style="display:inline-block;width:16px;height:14px;box-shadow:inset 0 0 0 2px #E74C3C;"></span>2時間ルール違反</div>
+          <div class="legend-item"><span style="display:inline-block;width:16px;height:14px;outline:2px dashed #E67E22;outline-offset:-2px;"></span>提供票から変更</div>
+          <div class="legend-item"><span style="display:inline-block;width:16px;height:14px;background:#FFF9C4;border:1px solid #B7950B;text-align:center;font-size:9px;color:#B7950B;">＋</span>空き枠</div>
         </div>
       </div>
 
@@ -1531,12 +1602,18 @@
 // ─────────────────────────────────────
 // データ
 // ─────────────────────────────────────
+// タイムグリッドは15分単位（07:00〜18:30 = 47スロット）
+// 各セルは dur(15/30/60) に応じて colspan で表示
 const TIME_SLOTS = [];
 for (let h = 7; h < 19; h++) {
-  for (let m = 0; m < 60; m += 30) {
-    if (h === 18 && m === 30) TIME_SLOTS.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
-    else if (h < 19) TIME_SLOTS.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+  for (let m = 0; m < 60; m += 15) {
+    if (h === 18 && m > 30) break;
+    TIME_SLOTS.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
   }
+}
+// 主要時刻判定（:00 と :30 は太字表示）
+function isMajorTime(t) {
+  return t.endsWith(':00') || t.endsWith(':30');
 }
 
 const STAFF = [
@@ -1956,22 +2033,8 @@ function generateShift() {
 // ─────────────────────────────────────
 function initSchedule() {
   // セル種別ショートカット
-  const REST = {user:'休憩', svc:'休憩', color:'#FFF', isRest:true};
-  // 配薬+住宅ペア（15分+15分）
-  const pair = (user, homeService = '居室掃除') => ({
-    type:'paired',
-    user, // ペアの主体利用者（同じ）
-    first: {svc: homeService, color: COLORS.home},   // 前15分: 住宅
-    second: {svc: '配薬', color: COLORS.med}          // 後15分: 配薬
-  });
-  // 移動セル
-  const move = (destUser) => ({
-    type:'movement',
-    user: destUser,
-    label: '🚗',
-    color: COLORS.movement,
-  });
-  // 60分セル（colspan=2）
+  const REST = {user:'休憩', svc:'休憩', color:'#FFF', isRest:true, dur:30};
+  // 60分セル
   const sixty = (user, svc, color, bath) => ({
     user, svc, color, dur:60, ...(bath ? {bath} : {})
   });
@@ -1983,27 +2046,18 @@ function initSchedule() {
   // 誘導セル（60分・3人ずつ）
   const guideLunch = { user:'誘導(昼)', svc:'食堂誘導', color: COLORS.guide, dur:60, isGuide:true };
   const guideAfternoon = { user:'誘導(午後)', svc:'食堂誘導', color: COLORS.guide, dur:60, isGuide:true };
-  // 外部利用者：移動15分+サービス15分のペア（サービス開始時）
-  const extStart = (user, svc) => ({
-    type: 'paired', user,
-    first: { svc: '移動', color: COLORS.movement, label:'🚗' },
-    second: { svc: svc + '①', color: COLORS.visit_l }
-  });
-  // 外部利用者：サービス15分+移動15分のペア（サービス終了時）
-  const extEnd = (user, svc) => ({
-    type: 'paired', user,
-    first: { svc: svc + '③', color: COLORS.visit_l },
-    second: { svc: '移動', color: COLORS.movement, label:'🚗' }
-  });
-  // 外部利用者：サービス本体（30分・中間）
-  const extMid = (user, svc) => ({
-    user, svc: svc + '②', color: COLORS.visit_l, isExt: true
-  });
+  // 15分セル（配薬・移動）
+  const med15 = (user) => ({ user, svc:'配薬', color: COLORS.med, dur:15 });
+  const home15 = (user, svc='居室掃除') => ({ user, svc, color: COLORS.home, dur:15 });
+  const move15 = (user) => ({ user, svc:'🚗移動', color: COLORS.movement, dur:15, isMove:true });
+  // 配薬準備（30分）
+  const prep30 = { user:'配薬準備', svc:'準備', color: COLORS.prep, dur:30, isPrep:true };
 
   schedule = {
     // ─── s01 上村（常勤・日勤）：朝の配薬セット ───
     's01': {
-      '08:00': pair('冷水', '居室掃除'),                        // 8:00-8:15 住宅 / 8:15-8:30 配薬（朝）
+      '08:00': home15('冷水','居室掃除'),                       // 8:00-8:15 住宅（15分）
+      '08:15': med15('冷水'),                                    // 8:15-8:30 配薬（15分）
       '08:30': sixty('冷水','身1生1',COLORS.visit_l),           // 60分: 8:30-9:30
       '09:30': sixty('村上','身2',COLORS.visit2),               // 60分: 9:30-10:30
       '10:30': bath('田代'),                                 // 60分入浴
@@ -2012,21 +2066,21 @@ function initSchedule() {
       '13:00': sixty('冷水','身2',COLORS.visit2),               // 60分: 13:00-14:00
       '14:00': {user:'森本',svc:'身1',color:COLORS.visit},
       '14:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
-      '15:00': bath('原田'),                                 // 60分入浴
+      '15:00': Object.assign(bath('原田'), {changedFromPlan: true, changeReason: '原案14:30→浴室競合のため15:00に変更'}),
       '16:00': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
       '16:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '17:00': {user:'冷水',svc:'身1',color:COLORS.visit},
       '17:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
     },
 
-    // ─── s02 原（常勤・日勤）：外部訪問（栗山様） ───
+    // ─── s02 原（常勤・日勤）：外部訪問（栗山様）正しい15+60+15 ───
     's02': {
-      '08:00': extStart('栗山','身1生1'),                       // 8:00-8:15 移動 / 8:15-8:30 サービス①
-      '08:30': extMid('栗山','身1生1'),                          // 8:30-9:00 サービス② (30分)
-      '09:00': extEnd('栗山','身1生1'),                          // 9:00-9:15 サービス③ / 9:15-9:30 移動
+      '08:00': move15('栗山'),                                  // 8:00-8:15 🚗移動（15分）
+      '08:15': sixty('栗山','身1生1',COLORS.visit_l),           // 8:15-9:15 サービス（60分）
+      '09:15': move15('栗山'),                                  // 9:15-9:30 🚗移動（15分）
       '09:30': bath('門田見'),                                   // 60分入浴
       '10:30': {user:'森本',svc:'身1',color:COLORS.visit},
-      '11:00': {user:'配薬準備',svc:'準備',color:COLORS.prep,isPrep:true,dur:30},  // 配薬準備30分
+      '11:00': prep30,                                           // 配薬準備30分
       '11:30': {user:'藤本',svc:'住宅・水分',color:COLORS.home},
       '12:00': REST, '12:30': REST,
       '13:00': sixty('高松','身1生1',COLORS.visit_l),
@@ -2061,9 +2115,9 @@ function initSchedule() {
 
     // ─── s04 田中（常勤・日勤）：外部訪問（三糸様）+ 13時誘導① ───
     's04': {
-      '08:00': extStart('三糸','身1生1'),                       // 8:00-8:15 移動 / 8:15-8:30 サービス①
-      '08:30': extMid('三糸','身1生1'),                          // 8:30-9:00 サービス② (30分)
-      '09:00': extEnd('三糸','身1生1'),                          // 9:00-9:15 サービス③ / 9:15-9:30 移動
+      '08:00': move15('三糸'),                                  // 8:00-8:15 🚗移動（15分）
+      '08:15': sixty('三糸','身1生1',COLORS.visit_l),           // 8:15-9:15 サービス（60分）
+      '09:15': move15('三糸'),                                  // 9:15-9:30 🚗移動（15分）
       '09:30': {user:'林',svc:'身1',color:COLORS.visit},
       '10:00': {user:'林',svc:'身1',color:COLORS.visit},
       '10:30': sixty('中根','身2',COLORS.visit2),
@@ -2090,7 +2144,7 @@ function initSchedule() {
       '11:30': {user:'東',svc:'身1',color:COLORS.visit},
       '12:00': REST, '12:30': REST,
       '13:00': guideAfternoon,                                   // 13:00-14:00 誘導②(60分)
-      '14:00': sixty('今井','身2',COLORS.visit2),
+      '14:00': Object.assign(sixty('今井','身2',COLORS.visit2), {changedFromPlan: true, changeReason: '原案では他スタッフ予定→急な欠員で柳田さんに変更'}),
       '15:00': {user:'本村',svc:'身1',color:COLORS.visit},
       '15:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '16:00': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
@@ -2137,7 +2191,8 @@ function initSchedule() {
       '15:00': {user:'三島',svc:'身1',color:COLORS.visit},
       '15:30': {user:'巡回',svc:'巡回',color:COLORS.patrol},
       '16:00': sixty('新貝','身2',COLORS.visit2),
-      '17:00': pair('村上','水分補給'),                          // 夕配薬セット
+      '17:00': Object.assign(home15('村上','水分補給'), {changedFromPlan: true, changeReason: '原案16:30→ダブルブッキング回避で17:00に変更'}),
+      '17:15': med15('村上'),                                    // 17:15-17:30 配薬（15分・夕）
       '17:30': {user:'新貝',svc:'身1',color:COLORS.visit},
     },
 
@@ -2177,9 +2232,9 @@ function initSchedule() {
     's13': {
       '08:00': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
       '08:30': {user:'住宅',svc:'住宅清掃',color:COLORS.home},
-      '09:00': extStart('肥田','身1'),                          // 9:00-9:15 移動 / 9:15-9:30 サービス①
-      '09:30': extMid('肥田','身1'),                             // 9:30-10:00 サービス② (30分)
-      '10:00': extEnd('肥田','身1'),                             // 10:00-10:15 サービス③ / 10:15-10:30 移動
+      '09:00': move15('肥田'),                                  // 9:00-9:15 🚗移動（15分）
+      '09:15': sixty('肥田','身1',COLORS.visit),                // 9:15-10:15 サービス（60分）
+      '10:15': move15('肥田'),                                  // 10:15-10:30 🚗移動（15分）
       '10:30': {user:'酒井浩',svc:'身1',color:COLORS.visit},
       '11:00': {user:'酒井浩',svc:'身1',color:COLORS.visit},
       '11:30': {user:'辻',svc:'身1',color:COLORS.visit},
@@ -2259,7 +2314,7 @@ function renderSchedule() {
   const bathConflicts = detectBathConflicts();
 
   let html = '<thead><tr><th class="col-staff">スタッフ</th>' +
-    TIME_SLOTS.map(t => `<th>${t}</th>`).join('') + '</tr></thead><tbody>';
+    TIME_SLOTS.map(t => `<th class="${isMajorTime(t) ? 'time-major' : 'time-minor'}">${t}</th>`).join('') + '</tr></thead><tbody>';
 
   STAFF.forEach(staff => {
     const status = getStaffStatus(staff);
@@ -2335,13 +2390,15 @@ function renderSchedule() {
           return;
         }
 
-        // ─── 通常セル（60分対応） ───
-        const isLongCell = cell.dur === 60;
-        const colspan = isLongCell ? ' colspan="2"' : '';
-        const longClass = isLongCell ? ' duration-60' : '';
-        // 60分セルの次のスロットはスキップ
-        if (isLongCell && idx + 1 < TIME_SLOTS.length) {
-          skipNext.add(TIME_SLOTS[idx + 1]);
+        // ─── 通常セル（15/30/60分対応） ───
+        const cellDur = cell.dur || 30;       // デフォルト30分
+        const cellSlots = cellDur / 15;        // 15min=1, 30min=2, 60min=4
+        const colspan = cellSlots > 1 ? ` colspan="${cellSlots}"` : '';
+        const isLongCell = cellDur === 60;
+        const longClass = isLongCell ? ' duration-60' : (cellDur === 15 ? ' duration-15' : '');
+        // 占有する次のスロットはスキップ
+        for (let i = 1; i < cellSlots; i++) {
+          if (idx + i < TIME_SLOTS.length) skipNext.add(TIME_SLOTS[idx + i]);
         }
 
         const userColor = cell.isRest ? '#999' : 'white';
@@ -2354,9 +2411,12 @@ function renderSchedule() {
           `<span class="external-mark" title="外部利用者">外</span>` : '';
         const bathMarkup = cell.bath ?
           `<span class="bath-badge" title="浴室${cell.bath}">浴${cell.bath}</span>` : '';
-        const fullNameTitle = userInfo ? `${userInfo.full}様${userInfo.notes ? ' | 備考: ' + userInfo.notes : ''}${cell.bath ? ' | 浴室'+cell.bath+'使用' : ''}${cell.dur === 60 ? ' | 60分サービス' : ''}` : cell.user;
+        const fullNameTitle = userInfo ? `${userInfo.full}様${userInfo.notes ? ' | 備考: ' + userInfo.notes : ''}${cell.bath ? ' | 浴室'+cell.bath+'使用' : ''}${cell.dur === 60 ? ' | 60分サービス' : ''}${changedTitle}` : (cell.user + changedTitle);
         const prepClass = cell.isPrep ? ' prep-cell' : '';
-        html += `<td class="has-task${modClass}${violationClass}${bathConflictClass}${longClass}${prepClass}" style="background:${cell.color};${cell.isRest?'border:1px dashed #999;':''}"
+        const moveClass = cell.isMove ? ' movement-cell' : '';
+        const changedClass = cell.changedFromPlan ? ' changed-from-plan' : '';
+        const changedTitle = cell.changedFromPlan ? ` ⚠️ 提供票変更: ${cell.changeReason || '原案から変更あり'}` : '';
+        html += `<td class="has-task${modClass}${violationClass}${bathConflictClass}${longClass}${prepClass}${moveClass}${changedClass}" style="background:${cell.color};${cell.isRest?'border:1px dashed #999;':''}"
                      ${colspan}
                      ${draggable}
                      data-staff="${staff.id}" data-time="${t}"
@@ -2626,6 +2686,42 @@ function renderStaffingPanel() {
     emptyAlert = `<div class="recommendation warn">🚨 空き枠 ${emptyCount}件・無駄な人件費が発生しています。出社人数調整を推奨</div>`;
   }
 
+  // スタッフごとの「住宅清掃」の比率を計算（住宅が多い→早期退社で削減可能）
+  const homeOnlyAlerts = [];
+  STAFF.forEach(staff => {
+    const status = getStaffStatus(staff);
+    if (['off','paid','wish','akeoff','night'].includes(status)) return;
+    if (staff.type !== '常勤') return;  // 常勤のみ対象（パートは元々短時間）
+    const row = schedule[staff.id] || {};
+    // 15時以降の時間帯で「住宅清掃」または「巡回」のみの回数をカウント
+    let lateHomeCount = 0, lateOtherCount = 0;
+    const afternoonSlots = ['15:00','15:30','16:00','16:30','17:00','17:30'];
+    afternoonSlots.forEach(t => {
+      const cell = row[t];
+      if (!cell) return;
+      if (cell.svc && (cell.svc.includes('住宅') || cell.svc.includes('巡回'))) {
+        lateHomeCount++;
+      } else if (cell.user && !cell.isRest) {
+        lateOtherCount++;
+      }
+    });
+    // 15時以降に住宅・巡回のみで実サービスがない → 15時退社推奨
+    if (lateHomeCount >= 3 && lateOtherCount === 0) {
+      homeOnlyAlerts.push({name: staff.name, count: lateHomeCount});
+    } else if (lateHomeCount >= 4 && lateOtherCount <= 1) {
+      homeOnlyAlerts.push({name: staff.name, count: lateHomeCount, partial: true});
+    }
+  });
+
+  let optAlert = '';
+  if (homeOnlyAlerts.length > 0) {
+    const items = homeOnlyAlerts.map(a =>
+      `${a.name}さん（住宅${a.count}コマ${a.partial?'/実サービス1件':''}）`
+    ).join('、');
+    const savedHours = homeOnlyAlerts.reduce((sum, a) => sum + a.count * 0.5, 0);
+    optAlert = `<div class="recommendation warn" style="background:rgba(155,89,182,0.4);">💡 退社時刻最適化提案：${items} を15時退社にすれば月 約${Math.round(savedHours * 4)}時間 / コスト 約${Math.round(savedHours * 4 * 1500/1000)}千円削減できます</div>`;
+  }
+
   panel.innerHTML = `
     <h4>📊 本日の業務量と出社人数</h4>
     <div class="stats">
@@ -2636,6 +2732,7 @@ function renderStaffingPanel() {
     </div>
     <div class="recommendation ${recClass}">${recommendation}</div>
     ${emptyAlert}
+    ${optAlert}
   `;
 }
 
@@ -2865,7 +2962,7 @@ function initStaffShiftData() {
   // 5/10（index 9）に休みを明示的に設定（デモ用）
   staffShiftData['s11'][9] = 'akeoff'; // 中小路：夜勤明け
   staffShiftData['s12'][9] = 'off';    // 出納：休
-  staffShiftData['s14'][9] = 'wish';   // 安部：希望休
+  staffShiftData['s14'][16] = 'wish';  // 安部：希望休（5/17 に移動）
 }
 
 function renderStaffShift() {
