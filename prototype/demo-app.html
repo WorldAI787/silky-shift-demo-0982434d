@@ -449,6 +449,64 @@
     color: #95A5A6 !important;
   }
 
+  /* 性別制約マーク */
+  .constraint-mark {
+    display: inline-block;
+    background: rgba(255,255,255,0.3);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 0 4px;
+    border-radius: 6px;
+    margin-left: 3px;
+    border: 1px solid rgba(255,255,255,0.5);
+  }
+  /* モーダル内の性別制約警告 */
+  .modal .reasoning li.constraint-warn {
+    background: #FDEDEC;
+    color: #C0392B;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin: 4px 0;
+    list-style: none;
+    font-weight: bold;
+  }
+
+  /* 備考欄エリア */
+  .notes-area {
+    background: #FFF8E1;
+    border-left: 6px solid #F39C12;
+    padding: 14px 18px;
+    border-radius: 4px;
+    margin: 16px 0;
+  }
+  .notes-area h4 {
+    color: #D68910;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  .notes-area .note-item {
+    font-size: 13px;
+    padding: 4px 0;
+    border-bottom: 1px dotted #E8C875;
+  }
+  .notes-area .note-item:last-child { border-bottom: none; }
+  .notes-area .note-item .user-name {
+    font-weight: bold;
+    color: #6E4500;
+    margin-right: 6px;
+  }
+  .notes-area .note-item .status {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-right: 6px;
+  }
+  .notes-area .note-item .status.hospitalized { background: #FADBD8; color: #C0392B; }
+  .notes-area .note-item .status.support { background: #D5F5E3; color: #1E8449; }
+  .notes-area .note-item .status.short_stay { background: #D6EAF8; color: #2E5984; }
+
   /* 印刷時 */
   @media print {
     .app-header, .stepper, .next-action, .actions, .ai-status, .legend, .view-tabs { display: none !important; }
@@ -1013,6 +1071,9 @@
         </div>
         <table class="schedule" id="scheduleTable"></table>
 
+        <!-- 備考欄（入院中・支援中・特記事項） -->
+        <div class="notes-area" id="notesArea"></div>
+
         <div class="legend">
           <strong>凡例：</strong>
           <div class="legend-item"><div class="legend-color" style="background:#4A90E2"></div>身1（身体介護1）</div>
@@ -1254,14 +1315,83 @@ const COLORS = {
   patrol: '#9013FE', guide: '#D8D8D8', night: '#2C3E50', rest: '#FFF',
 };
 
-const MOCK_USERS = [
-  '金子君子','藤本房江','最上百合子','田代義光','森本正人','森光子','門田見斐子','服部明美',
-  '清永好美','柴田久','土山てるみ','神山ヤエコ','平井健一','福島紀美子','原田フジノ','中根君子',
-  '橋本タツミ','林在椿','村上リヨ子','庵知子','高松エイ子','奈須静枝','田中津代','西垣國子',
-  '橋本せい子','三島弘明','渡邊正三','新貝節子','渡辺ナミエ','徳永史郎','東タカ子','今井千嘉子',
-  '冷水美喜子','村上妙子','梅本様','本村唱','太田昌子','津田睦朗','野木秀之','濵岡ツユ',
-  '赤木重和','廣瀬トシ子','栗山洋子','三糸一弘','肥田浩市','辻ゆう','酒井浩代','酒井教雄'
-];
+// 利用者マスター（フルネーム・性別・性別制約・浴室・備考等を含む）
+// gender: 'M'=男性 / 'F'=女性
+// genderConstraint: 'none'=指定なし / 'male_only'=男性スタッフのみ / 'female_only'=女性スタッフのみ
+// laundry: 1=週1回 / 2=週2回
+// bathRoom: 浴室番号（1-4）
+// status: 'active'=入居中 / 'hospitalized'=入院中 / 'support'=支援中 / 'short_stay'=短期入所
+const USER_MASTER = {
+  '金子': { full:'金子 君子', gender:'F', constraint:'female_only', laundry:2, bath:1, status:'active', notes:'' },
+  '藤本': { full:'藤本 房江', gender:'F', constraint:'none', laundry:1, bath:1, status:'hospitalized', notes:'脳梗塞で入院中（〜5/20予定）' },
+  '最上': { full:'最上 百合子', gender:'F', constraint:'female_only', laundry:2, bath:2, status:'active', notes:'' },
+  '田代': { full:'田代 義光', gender:'M', constraint:'none', laundry:2, bath:2, status:'active', notes:'' },
+  '森本': { full:'森本 正人', gender:'M', constraint:'none', laundry:2, bath:1, status:'active', notes:'' },
+  '森':   { full:'森 光子', gender:'F', constraint:'female_only', laundry:2, bath:3, status:'active', notes:'' },
+  '門田見':{ full:'門田見 斐子', gender:'F', constraint:'none', laundry:1, bath:2, status:'active', notes:'' },
+  '服部': { full:'服部 明美', gender:'F', constraint:'female_only', laundry:2, bath:3, status:'active', notes:'' },
+  '清永': { full:'清永 好美', gender:'F', constraint:'none', laundry:1, bath:1, status:'hospitalized', notes:'入院中（透析）' },
+  '柴田': { full:'柴田 久', gender:'M', constraint:'none', laundry:2, bath:4, status:'active', notes:'' },
+  '土山': { full:'土山 てるみ', gender:'F', constraint:'female_only', laundry:2, bath:2, status:'active', notes:'インスリン見守り要' },
+  '神山': { full:'神山 ヤエコ', gender:'F', constraint:'female_only', laundry:2, bath:3, status:'active', notes:'介護5・要慎重対応' },
+  '平井': { full:'平井 健一', gender:'M', constraint:'none', laundry:2, bath:4, status:'active', notes:'' },
+  '福島': { full:'福島 紀美子', gender:'F', constraint:'female_only', laundry:2, bath:3, status:'active', notes:'' },
+  '原田': { full:'原田 フジノ', gender:'F', constraint:'female_only', laundry:1, bath:1, status:'active', notes:'' },
+  '中根': { full:'中根 君子', gender:'F', constraint:'female_only', laundry:2, bath:2, status:'active', notes:'' },
+  '橋本タ':{ full:'橋本 タツミ', gender:'F', constraint:'none', laundry:1, bath:1, status:'support', notes:'要支援1' },
+  '林':   { full:'林 在椿', gender:'M', constraint:'none', laundry:2, bath:4, status:'active', notes:'' },
+  '村上リ':{ full:'村上 リヨ子', gender:'F', constraint:'female_only', laundry:2, bath:2, status:'active', notes:'' },
+  '庵':   { full:'庵 知子', gender:'F', constraint:'female_only', laundry:2, bath:3, status:'active', notes:'' },
+  '高松': { full:'高松 エイ子', gender:'F', constraint:'female_only', laundry:1, bath:1, status:'active', notes:'新規入居' },
+  '奈須': { full:'奈須 静枝', gender:'F', constraint:'none', laundry:2, bath:2, status:'active', notes:'' },
+  '田中津':{ full:'田中 津代', gender:'F', constraint:'female_only', laundry:2, bath:3, status:'active', notes:'' },
+  '西垣': { full:'西垣 國子', gender:'F', constraint:'female_only', laundry:1, bath:1, status:'active', notes:'' },
+  '橋本せ':{ full:'橋本 せい子', gender:'F', constraint:'none', laundry:1, bath:2, status:'support', notes:'要支援対応' },
+  '三島': { full:'三島 弘明', gender:'M', constraint:'none', laundry:2, bath:4, status:'active', notes:'' },
+  '渡邊': { full:'渡邊 正三', gender:'M', constraint:'none', laundry:2, bath:4, status:'active', notes:'' },
+  '新貝': { full:'新貝 節子', gender:'F', constraint:'female_only', laundry:2, bath:3, status:'active', notes:'区変1月申し出予定' },
+  '渡辺': { full:'渡辺 ナミエ', gender:'F', constraint:'female_only', laundry:2, bath:3, status:'active', notes:'' },
+  '徳永': { full:'徳永 史郎', gender:'M', constraint:'none', laundry:2, bath:4, status:'active', notes:'' },
+  '東':   { full:'東 タカ子', gender:'F', constraint:'female_only', laundry:1, bath:1, status:'active', notes:'' },
+  '今井': { full:'今井 千嘉子', gender:'F', constraint:'female_only', laundry:2, bath:2, status:'active', notes:'' },
+  '冷水': { full:'冷水 美喜子', gender:'F', constraint:'none', laundry:2, bath:3, status:'active', notes:'' },
+  '村上': { full:'村上 妙子', gender:'F', constraint:'female_only', laundry:2, bath:3, status:'active', notes:'' },
+  '梅本': { full:'梅本 様', gender:'F', constraint:'none', laundry:1, bath:1, status:'active', notes:'4月新規入居' },
+  '本村': { full:'本村 唱', gender:'M', constraint:'none', laundry:2, bath:4, status:'active', notes:'' },
+  '太田': { full:'太田 昌子', gender:'F', constraint:'female_only', laundry:1, bath:2, status:'active', notes:'' },
+  '津田': { full:'津田 睦朗', gender:'M', constraint:'none', laundry:2, bath:4, status:'active', notes:'' },
+  '野木': { full:'野木 秀之', gender:'M', constraint:'none', laundry:2, bath:4, status:'active', notes:'介護5' },
+  '濵岡': { full:'濵岡 ツユ', gender:'F', constraint:'female_only', laundry:1, bath:2, status:'active', notes:'' },
+  '赤木': { full:'赤木 重和', gender:'M', constraint:'none', laundry:2, bath:4, status:'active', notes:'' },
+  // 外部利用者（建物外・移動時間15分必要）
+  '廣瀬': { full:'廣瀬 トシ子', gender:'F', constraint:'female_only', laundry:1, bath:null, status:'hospitalized', notes:'外部・透析入院中', isExternal:true },
+  '栗山': { full:'栗山 洋子', gender:'F', constraint:'female_only', laundry:1, bath:null, status:'active', notes:'外部利用', isExternal:true },
+  '三糸': { full:'三糸 一弘', gender:'M', constraint:'none', laundry:1, bath:null, status:'active', notes:'外部利用', isExternal:true },
+  '肥田': { full:'肥田 浩市', gender:'M', constraint:'none', laundry:1, bath:null, status:'active', notes:'外部利用', isExternal:true },
+  '辻':   { full:'辻 ゆう', gender:'F', constraint:'none', laundry:1, bath:null, status:'active', notes:'新規3/24', isExternal:true },
+  '酒井浩':{ full:'酒井 浩代', gender:'F', constraint:'female_only', laundry:1, bath:null, status:'active', notes:'新規3/21', isExternal:true },
+  '酒井教':{ full:'酒井 教雄', gender:'M', constraint:'none', laundry:1, bath:null, status:'active', notes:'新規3/21', isExternal:true },
+};
+
+// PDFバルク処理デモ用の名前リスト（USER_MASTERから生成）
+const MOCK_USERS = Object.values(USER_MASTER).map(u => u.full);
+
+// ヘルパー：利用者情報を取得（短い名前から）
+function getUserInfo(shortName) {
+  return USER_MASTER[shortName] || { full: shortName, gender: '?', constraint: 'none', laundry: 1, bath: null, status: 'active', notes: '' };
+}
+
+// ヘルパー：性別制約のアイコン
+function getConstraintIcon(constraint) {
+  if (constraint === 'female_only') return '♀';
+  if (constraint === 'male_only') return '♂';
+  return '';
+}
+
+// ヘルパー：状態の表示文字
+function getStatusLabel(status) {
+  return { hospitalized: '🏥 入院中', support: '🤝 支援中', short_stay: '🏠 短期入所中', active: '' }[status] || '';
+}
 
 // 状態管理
 let schedule = {};
@@ -1722,9 +1852,16 @@ function renderSchedule() {
       if (cell) {
         const userColor = cell.isRest ? '#999' : 'white';
         const draggable = cell.isRest ? '' : 'draggable="true"';
+        // 利用者情報を取得して性別制約マークを表示
+        const userInfo = cell.isRest ? null : getUserInfo(cell.user);
+        const constraintIcon = userInfo ? getConstraintIcon(userInfo.constraint) : '';
+        const constraintMarkup = constraintIcon ?
+          `<span class="constraint-mark" title="${userInfo.constraint === 'female_only' ? '女性スタッフのみ可' : '男性スタッフのみ可'}">${constraintIcon}</span>` : '';
+        const fullNameTitle = userInfo ? `${userInfo.full}様${userInfo.notes ? ' | 備考: ' + userInfo.notes : ''}` : cell.user;
         html += `<td class="has-task${modClass}" style="background:${cell.color};${cell.isRest?'border:1px dashed #999;':''}"
                      ${draggable}
                      data-staff="${staff.id}" data-time="${t}"
+                     title="${fullNameTitle}"
                      ondragstart="onDragStart(event,'${staff.id}','${t}')"
                      ondragover="onDragOver(event,'${staff.id}','${t}')"
                      ondragleave="onDragLeave(event)"
@@ -1733,7 +1870,7 @@ function renderSchedule() {
                      onclick="openCell('${staff.id}','${t}')"
                      oncontextmenu="toggleLock(event,'${staff.id}','${t}')">
                   <div class="cell-content">
-                    <div class="user" style="color:${userColor}">${cell.user}</div>
+                    <div class="user" style="color:${userColor}">${cell.user}${constraintMarkup}</div>
                     <div class="svc" style="color:${userColor}">(${cell.svc})</div>
                   </div>
                   ${isLocked ? '<div class="lock-icon">🔒</div>' : ''}
@@ -1753,6 +1890,48 @@ function renderSchedule() {
   });
   html += '</tbody>';
   document.getElementById('scheduleTable').innerHTML = html;
+
+  // 備考欄を生成
+  renderNotesArea();
+}
+
+function renderNotesArea() {
+  const noteEl = document.getElementById('notesArea');
+  if (!noteEl) return;
+
+  // 入院中・支援中・備考あり の利用者をピックアップ
+  const items = [];
+  Object.entries(USER_MASTER).forEach(([short, info]) => {
+    if (info.status === 'hospitalized' || info.status === 'support' || info.status === 'short_stay' || (info.notes && info.notes.length > 0)) {
+      items.push({ short, info });
+    }
+  });
+
+  if (items.length === 0) {
+    noteEl.innerHTML = '<h4>📝 備考</h4><div style="font-size:13px; color:#666;">特記事項なし</div>';
+    return;
+  }
+
+  // 入院中→支援中→その他の順にソート
+  const order = { hospitalized: 1, support: 2, short_stay: 3, active: 4 };
+  items.sort((a,b) => (order[a.info.status]||5) - (order[b.info.status]||5));
+
+  let html = `<h4>📝 備考（${items.length}件）</h4>`;
+  items.forEach(({short, info}) => {
+    const statusLabel = info.status === 'hospitalized' ? '🏥 入院中' :
+                        info.status === 'support' ? '🤝 支援中' :
+                        info.status === 'short_stay' ? '🏠 短期入所' :
+                        info.constraint === 'female_only' ? '♀ 女性限定' :
+                        info.constraint === 'male_only' ? '♂ 男性限定' : '📌 特記';
+    const statusClass = info.status === 'active' ? 'support' : info.status;
+    html += `<div class="note-item">
+      <span class="status ${statusClass}">${statusLabel}</span>
+      <span class="user-name">${info.full} 様</span>
+      <span>${info.notes || ''}</span>
+    </div>`;
+  });
+
+  noteEl.innerHTML = html;
 }
 
 // ─────────────────────────────────────
@@ -2321,12 +2500,25 @@ function openCell(staffId, time) {
   const cell = (schedule[staffId] || {})[time];
   if (!cell) return;
 
-  document.getElementById('modalTitle').textContent = `${staff.name}さん × ${cell.user}様 ${time} (${cell.svc})`;
+  // 利用者情報を取得
+  const userInfo = cell.isRest ? null : getUserInfo(cell.user);
+  const userDisplay = userInfo ? userInfo.full : cell.user;
+  const constraintNote = userInfo && userInfo.constraint !== 'none' ?
+    `<li class="constraint-warn">⚠️ <strong>性別制約あり</strong>：${userInfo.constraint === 'female_only' ? '女性スタッフのみ可' : '男性スタッフのみ可'}</li>` : '';
+  const statusNote = userInfo && userInfo.status !== 'active' ?
+    `<li>📌 状態：${getStatusLabel(userInfo.status)}</li>` : '';
+  const notesNote = userInfo && userInfo.notes ?
+    `<li>📝 備考：${userInfo.notes}</li>` : '';
+
+  document.getElementById('modalTitle').textContent = `${staff.name}さん × ${userDisplay}様 ${time} (${cell.svc})`;
   document.getElementById('modalReasoning').innerHTML = `
     <li>✓ ${staff.name}さんの勤務時間内（${staff.time}）</li>
-    <li>✓ ${cell.user}様の希望時間に一致</li>
+    <li>✓ ${userDisplay}様の希望時間に一致</li>
     <li>✓ 連続業務OK（前後の業務との間隔OK）</li>
-    <li>✓ 先月と同じ担当者（継続配慮）</li>
+    <li>✓ 2時間ルールに違反なし</li>
+    ${constraintNote}
+    ${statusNote}
+    ${notesNote}
   `;
 
   const options = STAFF.filter(s => s.id !== staffId && s.shift !== '休' && s.shift !== '夜勤明け');
